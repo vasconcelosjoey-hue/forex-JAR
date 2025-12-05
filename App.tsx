@@ -204,6 +204,18 @@ const App: React.FC = () => {
       }
   };
 
+  const handleClearData = () => {
+    // Reset to initial state but keep current dollar rate if available
+    const newState = {
+        ...INITIAL_STATE,
+        dollarRate: appState.dollarRate || INITIAL_STATE.dollarRate,
+        lastUpdated: Date.now()
+    };
+    setAppState(newState);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    // It will auto-sync empty state to cloud due to useEffect
+  };
+
   const handleExport = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
     const downloadAnchorNode = document.createElement('a');
@@ -282,6 +294,7 @@ const App: React.FC = () => {
             onSaveConfig={handleSaveConfig}
             onExport={handleExport}
             onImport={handleImport}
+            onReset={handleClearData}
         />
     </>
   );

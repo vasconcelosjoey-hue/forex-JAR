@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from './ui/Card';
 import { Input } from './ui/Input';
 import { DatabaseConfig } from '../types';
-import { Database, Save, Upload, Download, X, CheckCircle2 } from 'lucide-react';
+import { Database, Save, Upload, Download, X, CheckCircle2, Trash2, AlertOctagon } from 'lucide-react';
 
 interface DatabaseModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface DatabaseModalProps {
   onSaveConfig: (config: DatabaseConfig) => void;
   onExport: () => void;
   onImport: (file: File) => void;
+  onReset: () => void;
 }
 
 export const DatabaseModal: React.FC<DatabaseModalProps> = ({
@@ -19,7 +20,8 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
   config,
   onSaveConfig,
   onExport,
-  onImport
+  onImport,
+  onReset
 }) => {
   const [url, setUrl] = useState(config.url);
   const [key, setKey] = useState(config.key);
@@ -149,6 +151,31 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
                         <span className="text-[10px] text-neutral-500 uppercase">UPLOAD .JSON</span>
                     </div>
                 </label>
+             </div>
+          </section>
+
+          {/* Danger Zone */}
+          <section className="pt-4 border-t-2 border-[#ff4444]/20">
+             <div className="bg-[#ff4444]/5 border-2 border-[#ff4444]/20 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                 <div className="flex items-center gap-3">
+                     <AlertOctagon className="text-[#ff4444]" size={32} />
+                     <div>
+                         <h3 className="text-[#ff4444] font-black uppercase text-sm">DANGER ZONE</h3>
+                         <p className="text-[10px] text-neutral-500">Isso apagará todos os lançamentos e snapshots.</p>
+                     </div>
+                 </div>
+                 <button 
+                    onClick={() => {
+                        if(confirm("ATENÇÃO: Isso apagará TODOS os registros de Roadmap, Progresso e Saques. Tem certeza?")) {
+                            onReset();
+                            onClose();
+                        }
+                    }}
+                    className="w-full md:w-auto bg-[#ff4444] text-black hover:bg-white px-6 py-3 font-bold uppercase text-xs flex items-center justify-center gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] border-2 border-transparent hover:border-[#ff4444]"
+                 >
+                    <Trash2 size={14} />
+                    RESETAR DADOS
+                 </button>
              </div>
           </section>
 
