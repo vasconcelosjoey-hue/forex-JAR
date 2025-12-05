@@ -6,8 +6,8 @@ import { Check, Trash2, Square } from 'lucide-react';
 import { CHECKPOINTS } from '../constants';
 import { parseCurrency } from '../utils/format';
 
-// Helper type for partners valid in Roadmap (excludes TAX)
-type RoadmapPartner = Exclude<PartnerName, 'TAX'>;
+// Explicitly define partners for Roadmap to avoid TS indexing errors with 'TAX'
+type RoadmapPartner = 'JOEY' | 'ALEX' | 'RUBINHO';
 
 interface RoadmapProps {
   state: AppState;
@@ -53,7 +53,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
   };
 
   const totalBrlDeposited = state.transactions
-    .filter(t => t.type === 'DEPOSIT' && t.partner !== 'TAX')
+    .filter(t => t.type === 'DEPOSIT')
     .reduce((acc, t) => acc + t.amountBrl, 0);
 
   const getPartnerTotals = (partner: PartnerName) => {

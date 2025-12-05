@@ -6,7 +6,7 @@ import { Withdrawals } from './views/Withdrawals';
 import { Dashboard } from './views/Dashboard';
 import { DatabaseModal } from './components/DatabaseModal';
 import { Tab, AppState, Transaction, DatabaseConfig } from './types';
-import { INITIAL_STATE } from './constants';
+import { INITIAL_STATE, SHARED_DB_CONFIG } from './constants';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const STORAGE_KEY = 'JAR_DASHBOARD_V1';
@@ -20,9 +20,9 @@ const App: React.FC = () => {
   });
   
   const [dbConfig, setDbConfig] = useState<DatabaseConfig>({
-    url: '',
-    key: '',
-    connected: false
+    url: SHARED_DB_CONFIG.url || '',
+    key: SHARED_DB_CONFIG.key || '',
+    connected: !!(SHARED_DB_CONFIG.url && SHARED_DB_CONFIG.key)
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,36 +32,55 @@ const App: React.FC = () => {
   
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
 
-  // Load from LocalStorage on mount
+  // Initialize App Data and Database Connection
   useEffect(() => {
-    try {
-      const savedState = localStorage.getItem(STORAGE_KEY);
-      const savedConfig = localStorage.getItem(DB_CONFIG_KEY);
-
-      if (savedState) {
-        setAppState({ ...INITIAL_STATE, ...JSON.parse(savedState) });
-      }
-
-      if (savedConfig) {
-        const config = JSON.parse(savedConfig);
-        setDbConfig(config);
-        if (config.connected && config.url && config.key) {
-            try {
-                const client = createClient(config.url, config.key);
-                setSupabaseClient(client);
-                // Trigger initial fetch
-                fetchFromCloud(client, JSON.parse(savedState || 'null'));
-            } catch (err) {
-                console.error("Failed to initialize Supabase client", err);
-                setDbSyncStatus('error');
+    const initApp = async () => {
+        try {
+            // 1. Try to load local preferences for Dollar Rate/Tabs (optional)
+            const savedStateStr = localStorage.getItem(STORAGE_KEY);
+            let localState = savedStateStr ? JSON.parse(savedStateStr) : null;
+            
+            // If we have local state, use it initially to prevent flicker
+            if (localState) {
+                setAppState(prev => ({ ...prev, ...localState }));
             }
+
+            // 2. Setup Database Connection
+            // Priority: Shared Config (Code) > LocalStorage Config
+            const savedConfigStr = localStorage.getItem(DB_CONFIG_KEY);
+            const savedConfig = savedConfigStr ? JSON.parse(savedConfigStr) : null;
+
+            // Determine effective config
+            const effectiveUrl = SHARED_DB_CONFIG.url || savedConfig?.url || '';
+            const effectiveKey = SHARED_DB_CONFIG.key || savedConfig?.key || '';
+            const isConnected = !!(effectiveUrl && effectiveKey);
+
+            setDbConfig({
+                url: effectiveUrl,
+                key: effectiveKey,
+                connected: isConnected,
+                lastSync: savedConfig?.lastSync
+            });
+
+            if (isConnected) {
+                try {
+                    const client = createClient(effectiveUrl, effectiveKey);
+                    setSupabaseClient(client);
+                    // Fetch latest data from cloud immediately
+                    await fetchFromCloud(client, localState);
+                } catch (err) {
+                    console.error("Failed to initialize Supabase client", err);
+                    setDbSyncStatus('error');
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load app initialization", e);
+        } finally {
+            setIsLoaded(true);
         }
-      }
-    } catch (e) {
-      console.error("Failed to load persistence", e);
-    } finally {
-      setIsLoaded(true);
-    }
+    };
+
+    initApp();
   }, []);
 
   // Fetch Dollar Rate
@@ -102,12 +121,12 @@ const App: React.FC = () => {
 
           if (data && data.content) {
               const cloudState = data.content as AppState;
-              // Simple Conflict Resolution: Last Updated Wins
-              if (!localState || (cloudState.lastUpdated > (localState.lastUpdated || 0))) {
-                  console.log("Cloud state is newer, updating local.");
-                  setAppState(cloudState);
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
-              }
+              // Simple Conflict Resolution: Cloud usually wins on initial load or if newer
+              // If we want "everyone sees the same", we should trust Cloud on load.
+              console.log("Cloud state loaded.");
+              setAppState(cloudState);
+              // Update local storage to match cloud
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
           }
           setDbSyncStatus('idle');
       } catch (err) {
@@ -149,6 +168,7 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 
     // 2. Save Cloud (Debounced)
+    // Only save if WE initiated the change (logic implicitly handled by React state updates triggered by user)
     if (dbConfig.connected && supabaseClient) {
         const handler = setTimeout(() => {
             saveToCloud(appState);
@@ -185,7 +205,7 @@ const App: React.FC = () => {
     updateState({ dollarRate: rate });
   };
 
-  // Database Configuration Handlers
+  // Database Configuration Handlers (Manual Override)
   const handleSaveConfig = (newConfig: DatabaseConfig) => {
       setDbConfig(newConfig);
       localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(newConfig));
@@ -213,7 +233,6 @@ const App: React.FC = () => {
     };
     setAppState(newState);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-    // It will auto-sync empty state to cloud due to useEffect
   };
 
   const handleExport = () => {
@@ -232,7 +251,6 @@ const App: React.FC = () => {
           try {
               if (e.target?.result) {
                   const importedState = JSON.parse(e.target.result as string);
-                  // Ensure drafts exists in imported state
                   const mergedState = { ...INITIAL_STATE, ...importedState, lastUpdated: Date.now() };
                   setAppState(mergedState);
               }

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tab } from '../types';
-import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart } from 'lucide-react';
+import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart, Menu, X } from 'lucide-react';
 
 interface LayoutProps {
   currentTab: Tab;
@@ -27,6 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({
   dbSyncStatus,
   children
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Theme Config per Tab
   const getThemeColor = (tab: Tab) => {
@@ -68,14 +69,46 @@ export const Layout: React.FC<LayoutProps> = ({
   // Background logic: If dashboard, main bg is white. Else black.
   const mainBgClass = currentTab === Tab.DASHBOARD ? 'bg-white' : 'bg-[#050505]';
 
+  const handleTabClick = (tab: Tab) => {
+      setTab(tab);
+      setIsMobileMenuOpen(false); // Close menu on mobile when clicking a link
+  };
+
   return (
-    <div className={`flex min-h-screen ${mainBgClass} text-white font-mono transition-colors duration-500`}>
+    <div className={`flex min-h-screen ${mainBgClass} text-white font-mono transition-colors duration-500 relative`}>
       
-      {/* SIDEBAR FIXED (Always Dark) */}
-      <aside className="w-72 fixed inset-y-0 left-0 bg-[#000] border-r-2 border-white/20 flex flex-col z-50 transition-colors duration-300">
+      {/* MOBILE HEADER */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b-2 border-white/20 z-40 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-black italic tracking-tighter text-white uppercase leading-[0.8]">
+                <span className={`text-xs mr-1 not-italic font-mono ${brandColor}`}>FOREX</span>
+                J.A.R.
+            </h1>
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`p-2 border-2 border-white/20 ${brandColor} active:bg-white/10`}
+          >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+      </div>
+
+      {/* OVERLAY for Mobile */}
+      {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+      )}
+
+      {/* SIDEBAR (Responsive) */}
+      <aside className={`
+        w-72 fixed inset-y-0 left-0 bg-[#000] border-r-2 border-white/20 flex flex-col z-50 transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         
-        {/* Logo Section */}
-        <div className="p-8 pb-6 border-b-2 border-white/20">
+        {/* Logo Section (Desktop) */}
+        <div className="p-8 pb-6 border-b-2 border-white/20 hidden lg:block">
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase relative leading-[0.8]">
                 <span className={`block text-sm mb-1 not-italic font-mono tracking-widest transition-colors ${brandColor}`}>FOREX</span>
                 J.A.R.
@@ -86,6 +119,12 @@ export const Layout: React.FC<LayoutProps> = ({
                     Brutalism_V1
                 </p>
             </div>
+        </div>
+
+        {/* Mobile Menu Header (only visible inside drawer on mobile) */}
+        <div className="p-6 border-b-2 border-white/20 lg:hidden flex justify-between items-center">
+             <span className="text-sm font-bold text-neutral-500">MENU</span>
+             <button onClick={() => setIsMobileMenuOpen(false)}><X size={20} /></button>
         </div>
 
         {/* Dollar Rate Card */}
@@ -124,11 +163,11 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-6 space-y-4">
+        <nav className="flex-1 p-6 space-y-4 overflow-y-auto">
             {navItems.map((item) => (
                 <button
                     key={item.id}
-                    onClick={() => setTab(item.id)}
+                    onClick={() => handleTabClick(item.id)}
                     className={`
                         w-full flex items-center gap-4 px-4 py-4 text-sm font-bold tracking-tight border-2 transition-all duration-150 uppercase
                         ${currentTab === item.id 
@@ -155,7 +194,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             <button 
-                onClick={onOpenSettings}
+                onClick={() => { onOpenSettings(); setIsMobileMenuOpen(false); }}
                 className={`
                     w-full flex items-center justify-center gap-2 p-3 border-2 transition-all duration-150 uppercase
                     ${isDbConnected 
@@ -170,7 +209,7 @@ export const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 ml-72 p-8 animate-in fade-in duration-300 max-w-[1600px]">
+      <main className="flex-1 lg:ml-72 p-4 lg:p-8 pt-20 lg:pt-8 animate-in fade-in duration-300 max-w-[1600px] w-full overflow-x-hidden">
         {children}
       </main>
     </div>
