@@ -1,13 +1,5 @@
 import { AppState } from "./types";
 
-// --- CONFIGURAÇÃO COMPARTILHADA (PREENCHA AQUI) ---
-// Para que todos vejam os mesmos dados ao abrir o link,
-// cole sua URL e KEY do Supabase aqui.
-export const SHARED_DB_CONFIG = {
-  url: "", // Ex: "https://seu-projeto.supabase.co"
-  key: "", // Ex: "eyJhbGciOiJIUzI1NiIsInR5..."
-};
-
 export const INITIAL_STATE: AppState = {
   dollarRate: 5.00,
   transactions: [],

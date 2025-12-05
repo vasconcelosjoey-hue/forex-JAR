@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from './ui/Card';
 import { Input } from './ui/Input';
 import { DatabaseConfig } from '../types';
-import { Database, Save, Upload, Download, X, CheckCircle2, Trash2, AlertOctagon } from 'lucide-react';
+import { Database, Save, Upload, Download, X, CheckCircle2, Trash2, AlertOctagon, Cloud } from 'lucide-react';
 
 interface DatabaseModalProps {
   isOpen: boolean;
@@ -23,25 +23,12 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
   onImport,
   onReset
 }) => {
-  const [url, setUrl] = useState(config.url);
-  const [key, setKey] = useState(config.key);
-
   if (!isOpen) return null;
-
-  const handleSave = () => {
-    onSaveConfig({
-      url,
-      key,
-      connected: !!(url && key),
-      lastSync: new Date().toISOString()
-    });
-    onClose();
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (confirm("Importar este arquivo substituirá TODOS os dados atuais. Deseja continuar?")) {
+      if (confirm("Importar este arquivo substituirá TODOS os dados atuais no Firebase. Deseja continuar?")) {
         onImport(file);
         onClose();
       }
@@ -72,51 +59,19 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
 
         <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
           
-          {/* Cloud Connection */}
-          <section>
-            <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
-               <h3 className="text-sm font-bold text-[#FF6F00] uppercase tracking-widest flex items-center gap-2">
-                 <div className="w-2 h-2 bg-[#FF6F00]"></div>
-                 SUPABASE CLOUD
-               </h3>
-               {config.connected && (
-                 <span className="text-[10px] bg-[#00e676] text-black px-2 py-1 font-bold uppercase border border-[#00e676]">
+          {/* Cloud Connection Status */}
+          <section className="bg-[#111] border-2 border-white/20 p-6">
+            <div className="flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                   <Cloud className="text-[#00e676]" size={24} />
+                   <div>
+                       <h3 className="text-sm font-bold text-white uppercase tracking-widest">FIREBASE CLOUD</h3>
+                       <p className="text-[10px] text-neutral-500">REALTIME SYNC ACTIVE</p>
+                   </div>
+               </div>
+               <span className="text-[10px] bg-[#00e676] text-black px-3 py-1 font-black uppercase tracking-wider">
                    CONNECTED
-                 </span>
-               )}
-            </div>
-            
-            <div className="bg-[#050505] p-6 border-2 border-white/10 space-y-6">
-               <div className="p-4 bg-blue-900/20 border-l-4 border-blue-500 mb-4">
-                  <p className="text-xs text-blue-200 leading-relaxed font-mono">
-                     SETUP: Create table <span className="bg-blue-500 text-black px-1">jar_data</span>. <br/>
-                     Columns: id (primary), content (jsonb), updated_at (timestamp).
-                  </p>
-               </div>
-
-               <Input 
-                 label="PROJECT_URL" 
-                 placeholder="https://xyz.supabase.co" 
-                 value={url}
-                 onChange={(e) => setUrl(e.target.value)}
-               />
-               <Input 
-                 label="API_KEY" 
-                 type="password"
-                 placeholder="eyJh..." 
-                 value={key}
-                 onChange={(e) => setKey(e.target.value)}
-               />
-               
-               <div className="flex justify-end pt-2">
-                 <button 
-                    onClick={handleSave}
-                    className="bg-[#FF6F00] hover:bg-white hover:text-black text-black px-8 py-3 font-bold uppercase text-sm flex items-center gap-2 transition-all shadow-[4px_4px_0px_0px_white] border-2 border-transparent hover:border-black rounded-none"
-                 >
-                    <Save size={16} />
-                    SAVE CONFIG
-                 </button>
-               </div>
+               </span>
             </div>
           </section>
 
@@ -161,12 +116,12 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
                      <AlertOctagon className="text-[#ff4444]" size={32} />
                      <div>
                          <h3 className="text-[#ff4444] font-black uppercase text-sm">DANGER ZONE</h3>
-                         <p className="text-[10px] text-neutral-500">Isso apagará todos os lançamentos e snapshots.</p>
+                         <p className="text-[10px] text-neutral-500">Isso apagará todos os dados no Firebase.</p>
                      </div>
                  </div>
                  <button 
                     onClick={() => {
-                        if(confirm("ATENÇÃO: Isso apagará TODOS os registros de Roadmap, Progresso e Saques. Tem certeza?")) {
+                        if(confirm("ATENÇÃO: Isso apagará TODOS os registros no servidor. Tem certeza?")) {
                             onReset();
                             onClose();
                         }
