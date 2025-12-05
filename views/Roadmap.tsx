@@ -6,6 +6,9 @@ import { Check, Trash2, Square } from 'lucide-react';
 import { CHECKPOINTS } from '../constants';
 import { parseCurrency } from '../utils/format';
 
+// Helper type for partners valid in Roadmap (excludes TAX)
+type RoadmapPartner = Exclude<PartnerName, 'TAX'>;
+
 interface RoadmapProps {
   state: AppState;
   addTransaction: (transaction: Omit<Transaction, 'id' | 'timestamp'>) => void;
@@ -15,7 +18,7 @@ interface RoadmapProps {
 
 export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteTransaction, updateState }) => {
   
-  const handleInputChange = (partner: string, value: string) => {
+  const handleInputChange = (partner: RoadmapPartner, value: string) => {
     updateState({
         drafts: {
             ...state.drafts,
@@ -27,7 +30,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
     });
   };
 
-  const handleDeposit = (partner: PartnerName) => {
+  const handleDeposit = (partner: RoadmapPartner) => {
     const amountBrl = parseCurrency(state.drafts.roadmap[partner]);
     if (!amountBrl || isNaN(amountBrl) || amountBrl <= 0) return;
 
@@ -45,7 +48,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
     handleInputChange(partner, '');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, partner: PartnerName) => {
+  const handleKeyDown = (e: React.KeyboardEvent, partner: RoadmapPartner) => {
     if (e.key === 'Enter') handleDeposit(partner);
   };
 
@@ -62,7 +65,6 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
 
   const finalGoal = 55000;
   const progressPercentage = Math.min((totalBrlDeposited / finalGoal) * 100, 100);
-  const themeColor = '#FF6F00'; // Orange Theme
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-5rem)] overflow-hidden font-mono">
@@ -97,7 +99,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
                 Registrar Aporte
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {(['JOEY', 'ALEX', 'RUBINHO'] as PartnerName[]).map(partner => (
+              {(['JOEY', 'ALEX', 'RUBINHO'] as RoadmapPartner[]).map(partner => (
                 <Input
                   key={partner}
                   label={partner}
@@ -160,7 +162,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
 
       {/* Partner Mini Stats */}
       <div className="grid grid-cols-3 gap-6 flex-shrink-0">
-         {(['JOEY', 'ALEX', 'RUBINHO'] as PartnerName[]).map(partner => {
+         {(['JOEY', 'ALEX', 'RUBINHO'] as RoadmapPartner[]).map(partner => {
              const { brl } = getPartnerTotals(partner);
              return (
                  <div key={partner} className="bg-[#000] border-2 border-white/20 p-4 relative group hover:border-[#FF6F00] transition-colors">
