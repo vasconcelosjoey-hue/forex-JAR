@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // @ts-ignore - Access import.meta.env directly so Vite can replace it during build/dev
 const env = import.meta.env || {};
@@ -13,5 +13,19 @@ const firebaseConfig = {
   appId: env.VITE_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+let db: Firestore;
+
+try {
+  // Proteção: Só tenta conectar se houver chave de API, senão o app quebraria na importação
+  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+  } else {
+      console.warn("Firebase Config incompleta. O app iniciará em modo de configuração.");
+  }
+} catch (e) {
+  console.error("Erro fatal ao inicializar Firebase:", e);
+}
+
+// Exporta db (pode ser undefined se falhar, o App.tsx vai lidar com isso)
+export { db };

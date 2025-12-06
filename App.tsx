@@ -22,11 +22,23 @@ const App: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+  const [missingConfig, setMissingConfig] = useState(false);
   
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
 
   // Initialize App Data and Database Connection
   useEffect(() => {
+    // Check for Firebase Config
+    // @ts-ignore
+    const env = import.meta.env || {};
+    
+    // Se não tiver chave configurada OU se o objeto db não foi criado (erro na init), mostra tela de config
+    if (!env.VITE_FIREBASE_API_KEY || !db) {
+        setMissingConfig(true);
+        setIsLoaded(true);
+        return;
+    }
+
     // 1. Load local preferences instantly
     const savedStateStr = localStorage.getItem(STORAGE_KEY);
     if (savedStateStr) {
@@ -39,30 +51,36 @@ const App: React.FC = () => {
     }
     
     // 2. Subscribe to Firestore Realtime Updates
-    const unsubscribe = onSnapshot(doc(db, 'jar_state', 'global'), 
-      (docSnap) => {
-        setIsLoaded(true);
-        if (docSnap.exists()) {
-          const remoteData = docSnap.data() as AppState;
-          console.log("Received update from Firebase");
-          
-          // Simple merge: Remote data takes precedence for shared state
-          // We preserve local UI state if necessary, but here we want full sync
-          setAppState(remoteData);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
-          setDbSyncStatus('idle');
-        } else {
-          console.log("No global document found. Using initial/local state.");
-        }
-      }, 
-      (error) => {
-        console.error("Firebase subscription error:", error);
+    try {
+        const unsubscribe = onSnapshot(doc(db, 'jar_state', 'global'), 
+          (docSnap) => {
+            setIsLoaded(true);
+            if (docSnap.exists()) {
+              const remoteData = docSnap.data() as AppState;
+              console.log("Received update from Firebase");
+              
+              // Simple merge: Remote data takes precedence for shared state
+              setAppState(remoteData);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
+              setDbSyncStatus('idle');
+            } else {
+              console.log("No global document found. Using initial/local state.");
+              // Create the initial document if it doesn't exist
+              saveToCloud(INITIAL_STATE);
+            }
+          }, 
+          (error) => {
+            console.error("Firebase subscription error:", error);
+            setDbSyncStatus('error');
+            setIsLoaded(true);
+          }
+        );
+        return () => unsubscribe();
+    } catch (err) {
+        console.error("Erro crítico ao conectar no Firestore:", err);
         setDbSyncStatus('error');
         setIsLoaded(true);
-      }
-    );
-
-    return () => unsubscribe();
+    }
   }, []);
 
   // Fetch Dollar Rate
@@ -75,8 +93,6 @@ const App: React.FC = () => {
         if (!isNaN(bid)) {
             setAppState(prev => {
                 const newState = { ...prev, dollarRate: bid };
-                // We don't save to cloud here immediately to avoid spam, 
-                // but the next user action will save it, or the auto-save loop.
                 return newState;
             });
             setLastRateUpdate(Date.now());
@@ -88,43 +104,41 @@ const App: React.FC = () => {
 
   // Auto-Update Dollar Rate
   useEffect(() => {
-    fetchDollarRate();
-    const interval = setInterval(fetchDollarRate, 60000); // Update every 60s
-    return () => clearInterval(interval);
-  }, [fetchDollarRate]);
+    if (!missingConfig) {
+        fetchDollarRate();
+        const interval = setInterval(fetchDollarRate, 60000); // Update every 60s
+        return () => clearInterval(interval);
+    }
+  }, [fetchDollarRate, missingConfig]);
 
 
   // Sync Function: Save to Cloud
   const saveToCloud = useCallback(async (state: AppState) => {
+      if (missingConfig || !db) return;
       setDbSyncStatus('syncing');
       try {
           await setDoc(doc(db, 'jar_state', 'global'), state);
-          // console.log('Cloud sync success');
           setDbSyncStatus('idle');
       } catch (err) {
           console.error("Error saving to cloud", err);
           setDbSyncStatus('error');
       }
-  }, []);
+  }, [missingConfig]);
 
   // Debounced Auto-Save
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || missingConfig) return;
 
     // 1. Save Local
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 
     // 2. Save Cloud (Debounced)
-    // Only save if the data is "newer" or changed. 
-    // In a realtime setup, we rely on the fact that if we changed the state via UI, we want to persist it.
-    // The onSnapshot updates state too, but we should avoid echo loops.
-    // However, Firestore SDK handles local latency compensation well.
     const handler = setTimeout(() => {
         saveToCloud(appState);
     }, 1000); // 1 second debounce
 
     return () => clearTimeout(handler);
-  }, [appState, isLoaded, saveToCloud]);
+  }, [appState, isLoaded, saveToCloud, missingConfig]);
 
 
   // Actions
@@ -191,6 +205,25 @@ const App: React.FC = () => {
       reader.readAsText(file);
   };
 
+  if (missingConfig) {
+      return (
+          <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-8 text-center font-mono">
+              <h1 className="text-3xl text-[#FF6F00] font-black mb-4">CONFIGURAÇÃO NECESSÁRIA</h1>
+              <div className="bg-[#111] border-2 border-white/20 p-6 max-w-xl text-left">
+                  <p className="text-white mb-4">O app não encontrou as chaves do Firebase.</p>
+                  <ol className="list-decimal pl-5 text-neutral-400 space-y-2 text-sm">
+                      <li>Verifique se você criou o arquivo <code className="text-[#00e676] bg-black px-1">.env</code></li>
+                      <li>Verifique se copiou as chaves corretas do site do Firebase.</li>
+                      <li>Se acabou de editar o arquivo, <strong>reinicie o terminal</strong>.</li>
+                  </ol>
+                  <div className="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500">
+                      ERRO: Chaves não detectadas ou inicialização do DB falhou.
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
   if (!isLoaded) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#FF6F00] font-black animate-pulse">LOADING J.A.R. FIREBASE...</div>;
 
   return (
@@ -203,7 +236,7 @@ const App: React.FC = () => {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRefreshRate={fetchDollarRate}
         lastRateUpdate={lastRateUpdate}
-        isDbConnected={true} // Always connected with Firebase config
+        isDbConnected={true} 
         dbSyncStatus={dbSyncStatus}
         >
         {activeTab === Tab.ROADMAP && (
@@ -238,7 +271,7 @@ const App: React.FC = () => {
         <DatabaseModal 
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
-            config={{ url: 'FIREBASE', key: 'ENV', connected: true }} // Dummy config object
+            config={{ url: 'FIREBASE', key: 'ENV', connected: true }} 
             onSaveConfig={() => {}}
             onExport={handleExport}
             onImport={handleImport}
