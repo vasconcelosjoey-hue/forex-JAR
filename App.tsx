@@ -10,11 +10,13 @@ import { INITIAL_STATE } from './constants';
 import { db, initError } from './services/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-const STORAGE_KEY = 'JAR_DASHBOARD_V1';
+// Mudei a chave para forçar uma "limpeza" suave no cache dos navegadores
+const STORAGE_KEY = 'JAR_DASHBOARD_V2_SYNCED';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
   
+  // Inicializa com LocalStorage para exibir algo rápido enquanto carrega
   const [appState, setAppState] = useState<AppState>(() => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -31,24 +33,26 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error'>('syncing');
   const [missingConfig, setMissingConfig] = useState(false);
-  
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
+
+  // Controle de origem da atualização
+  const isRemoteUpdate = useRef(false);
+  // Bloqueia salvamento até a primeira carga do servidor
+  const hasInitialLoad = useRef(false);
 
   const saveLocalInstant = (state: AppState) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   };
 
-  // Helper to check deep equality of shared data
-  // ATUALIZAÇÃO: Agora verificamos TUDO, incluindo drafts, para permitir o sync de inputs
-  const isDataEqual = (local: AppState, remote: AppState) => {
-      // Normalizamos removendo apenas lastUpdated
-      const normalize = (s: AppState) => {
-          const { lastUpdated, ...rest } = s;
-          return rest;
-      };
-      return JSON.stringify(normalize(local)) === JSON.stringify(normalize(remote));
+  // Comparação profunda simples para evitar loops
+  const isStateDifferent = (local: AppState, remote: AppState) => {
+      // Compara JSONs removendo timestamps que mudam sempre
+      const cleanLocal = JSON.stringify({ ...local, lastUpdated: 0 });
+      const cleanRemote = JSON.stringify({ ...remote, lastUpdated: 0 });
+      return cleanLocal !== cleanRemote;
   };
 
+  // 1. LISTENER DO FIREBASE (A Verdade Absoluta)
   useEffect(() => {
     setIsLoaded(true);
 
@@ -58,41 +62,51 @@ const App: React.FC = () => {
     }
     
     try {
+        console.log("Conectando ao Firebase...");
         const unsubscribe = onSnapshot(doc(db, 'jar_state', 'global'), 
           (docSnap) => {
             if (docSnap.exists()) {
               const remoteData = docSnap.data() as AppState;
               
-              setAppState(currentLocalState => {
-                  // BREAK INFINITE LOOP:
-                  if (isDataEqual(currentLocalState, remoteData)) {
+              setAppState(currentLocal => {
+                  // Se os dados forem iguais, ignoramos para não renderizar à toa
+                  if (!isStateDifferent(currentLocal, remoteData)) {
                       setDbSyncStatus('idle');
-                      return currentLocalState;
+                      hasInitialLoad.current = true;
+                      return currentLocal;
                   }
 
-                  // SYNC TOTAL:
-                  // Agora aceitamos os drafts (inputs) que vêm do servidor.
-                  // Isso permite que o PC atualize o Celular.
-                  const mergedState = {
+                  console.log("Recebendo atualização do servidor (Mestre)...");
+                  
+                  // MARCA QUE É UPDATE REMOTO para o useEffect de save não devolver pro servidor
+                  isRemoteUpdate.current = true; 
+                  hasInitialLoad.current = true;
+
+                  // O Servidor manda. Sobrescrevemos o local.
+                  // Mantemos apenas drafts se o servidor estiver vazio nessa parte,
+                  // mas priorizamos o servidor para garantir sincronia.
+                  const newState = {
                       ...remoteData,
-                      // Se o servidor não tiver drafts (legado), usa o local. Se tiver, usa do servidor.
-                      drafts: remoteData.drafts || currentLocalState.drafts, 
                       lastUpdated: Date.now()
                   };
-                  
-                  saveLocalInstant(mergedState);
+
+                  saveLocalInstant(newState);
                   setDbSyncStatus('idle');
-                  return mergedState;
+                  return newState;
               });
               
             } else {
-              saveToCloud(appState);
+              // Se não existe nada no servidor (Banco Zerado), aí sim o Local manda
+              console.log("Banco vazio. Criando registro inicial.");
+              hasInitialLoad.current = true;
               setDbSyncStatus('idle');
+              // O useEffect de save vai rodar em seguida e criar o doc
             }
           }, 
           (error) => {
-            console.error("Firebase error:", error);
+            console.error("Erro Firebase:", error);
             setDbSyncStatus('error');
+            hasInitialLoad.current = true; // Libera uso offline se der erro
           }
         );
         return () => unsubscribe();
@@ -101,6 +115,7 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // 2. BUSCA COTAÇÃO DÓLAR
   const fetchDollarRate = useCallback(async () => {
     try {
         const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
@@ -109,14 +124,14 @@ const App: React.FC = () => {
         
         if (!isNaN(bid)) {
             setAppState(prev => {
-                const newState = { ...prev, dollarRate: bid };
-                saveLocalInstant(newState);
-                return newState;
+                // Só atualiza se mudou
+                if (Math.abs(prev.dollarRate - bid) < 0.0001) return prev;
+                return { ...prev, dollarRate: bid };
             });
             setLastRateUpdate(Date.now());
         }
     } catch (error) {
-        console.error("Failed to fetch dollar rate", error);
+        console.error("Erro dollar rate", error);
     }
   }, []);
 
@@ -129,30 +144,47 @@ const App: React.FC = () => {
   }, [fetchDollarRate, missingConfig]);
 
 
+  // 3. FUNÇÃO DE SALVAR (Escrita)
   const saveToCloud = useCallback(async (state: AppState) => {
       if (missingConfig || !db) return;
+      
       setDbSyncStatus('syncing');
       try {
           const stateToSave = { ...state, lastUpdated: Date.now() };
           await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
           setTimeout(() => setDbSyncStatus('idle'), 500);
       } catch (err) {
-          console.error("Error saving to cloud", err);
+          console.error("Erro ao salvar:", err);
           setDbSyncStatus('error');
       }
   }, [missingConfig]);
 
-  // Debounced Cloud Save
-  // Reduzido para 300ms para parecer mais "real-time" entre dispositivos
+  // 4. TRIGGER DE AUTO-SAVE (Lógica Corrigida)
   useEffect(() => {
     if (missingConfig) return;
+
+    // Se ainda não carregamos a versão inicial do servidor, PROIBIDO SALVAR.
+    // Isso evita que o celular sobrescreva o servidor ao ligar.
+    if (!hasInitialLoad.current) return;
+
+    // Se a mudança veio do servidor (isRemoteUpdate), NÃO salvamos de volta.
+    // Isso evita o loop infinito.
+    if (isRemoteUpdate.current) {
+        isRemoteUpdate.current = false; // Reseta a flag e sai
+        return;
+    }
+
+    // Se chegou aqui, foi o usuário que mexeu (input, botão, etc). Salva.
     const handler = setTimeout(() => {
-        saveToCloud(appState);
-    }, 500); 
+        saveLocalInstant(appState); // Salva local
+        saveToCloud(appState);      // Salva nuvem
+    }, 1000); 
+    
     return () => clearTimeout(handler);
   }, [appState, saveToCloud, missingConfig]);
 
 
+  // ACTIONS
   const updateState = (updates: Partial<AppState>) => {
     setAppState(prev => {
         const newState = { 
@@ -160,7 +192,8 @@ const App: React.FC = () => {
             ...updates,
             lastUpdated: Date.now()
         };
-        saveLocalInstant(newState);
+        // Não salvamos instantaneamente aqui, deixamos o useEffect lidar com isso
+        // para aproveitar o debounce e a lógica de proteção.
         return newState;
     });
   };
@@ -183,14 +216,16 @@ const App: React.FC = () => {
   };
 
   const handleClearData = () => {
+    // Reset total
     const newState = {
         ...INITIAL_STATE,
         dollarRate: appState.dollarRate || INITIAL_STATE.dollarRate,
         lastUpdated: Date.now()
     };
     setAppState(newState);
-    saveLocalInstant(newState);
-    saveToCloud(newState);
+    // Aqui forçamos o save imediato
+    hasInitialLoad.current = true;
+    isRemoteUpdate.current = false;
   };
 
   const handleExport = () => {
@@ -211,8 +246,7 @@ const App: React.FC = () => {
                   const importedState = JSON.parse(e.target.result as string);
                   const mergedState = { ...INITIAL_STATE, ...importedState, lastUpdated: Date.now() };
                   setAppState(mergedState);
-                  saveLocalInstant(mergedState);
-                  saveToCloud(mergedState);
+                  // Importação conta como ação de usuário, então deixamos o useEffect salvar
               }
           } catch (err) {
               alert("Erro ao ler arquivo de backup.");
