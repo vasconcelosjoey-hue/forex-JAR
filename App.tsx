@@ -14,87 +14,81 @@ const STORAGE_KEY = 'JAR_DASHBOARD_V1';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
-  const [appState, setAppState] = useState<AppState>({
-    ...INITIAL_STATE,
-    lastUpdated: Date.now()
+  
+  // Load initial state synchronously from localStorage if possible to avoid flash
+  const [appState, setAppState] = useState<AppState>(() => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+          try {
+              return { ...INITIAL_STATE, ...JSON.parse(saved) };
+          } catch (e) {
+              return { ...INITIAL_STATE, lastUpdated: Date.now() };
+          }
+      }
+      return { ...INITIAL_STATE, lastUpdated: Date.now() };
   });
   
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false); // Starts false, but effectively instant due to logic below
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+  const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error'>('syncing');
   const [missingConfig, setMissingConfig] = useState(false);
   
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
 
-  // Initialize App Data and Database Connection
+  // Helper para salvar LocalStorage IMEDIATAMENTE
+  const saveLocalInstant = (state: AppState) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  };
+
+  // Initialize
   useEffect(() => {
-    // Se o objeto db não foi criado (erro na init do services/firebase.ts), mostra tela de config
+    // Instant Load confirmation
+    setIsLoaded(true);
+
     if (!db) {
         setMissingConfig(true);
-        setIsLoaded(true);
         return;
     }
-
-    // 1. Load local preferences instantly
-    const savedStateStr = localStorage.getItem(STORAGE_KEY);
-    if (savedStateStr) {
-        try {
-            const localState = JSON.parse(savedStateStr);
-            setAppState(prev => ({ ...prev, ...localState }));
-        } catch (e) {
-            console.error("Local storage parse error", e);
-        }
-    }
     
-    // 2. Subscribe to Firestore Realtime Updates
+    // Subscribe to Firestore
     try {
         const unsubscribe = onSnapshot(doc(db, 'jar_state', 'global'), 
           (docSnap) => {
-            setIsLoaded(true);
             if (docSnap.exists()) {
               const remoteData = docSnap.data() as AppState;
               
               setAppState(currentLocalState => {
-                  // LÓGICA DE SMART MERGE (Preservar Inputs)
-                  // Se o estado local tem um timestamp mais recente que o remoto, 
-                  // significa que o usuário digitou algo e deu refresh antes de salvar no banco.
-                  // Nesse caso, PRESERVAMOS os 'drafts' (inputs) locais, mas aceitamos
-                  // a verdade financeira (transações/saldos) do banco.
+                  // A REGRA DE OURO: 
+                  // O banco atualiza Transações, Histórico e Taxas.
+                  // O LocalStorage (currentLocalState) manda nos DRAFTS (Inputs).
+                  // Isso impede que o banco limpe o que você está digitando.
                   
-                  if (currentLocalState.lastUpdated > remoteData.lastUpdated) {
-                      console.log("Conflito de Sync: Mantendo rascunhos locais mais recentes.");
-                      return {
-                          ...remoteData, // Pega dados confirmados do servidor
-                          drafts: currentLocalState.drafts, // Mantém o que o usuário estava escrevendo
-                          lastUpdated: currentLocalState.lastUpdated // Mantém data recente para forçar o próximo save
-                      };
-                  }
-
-                  // Caso normal: O banco é mais novo ou igual, aceita tudo do banco.
+                  const mergedState = {
+                      ...remoteData, // Pega tudo do banco
+                      drafts: currentLocalState.drafts, // MAS mantém os inputs locais
+                      lastUpdated: Date.now()
+                  };
+                  
+                  // Atualiza backup local com o merge
+                  saveLocalInstant(mergedState);
                   setDbSyncStatus('idle');
-                  return remoteData;
+                  return mergedState;
               });
-
-              // Atualiza o localstorage para garantir redundância
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
               
             } else {
-              console.log("No global document found. Using initial/local state.");
-              // Create the initial document if it doesn't exist
-              saveToCloud(INITIAL_STATE);
+              // Se não existe nada no banco, cria com o que temos localmente
+              saveToCloud(appState);
+              setDbSyncStatus('idle');
             }
           }, 
           (error) => {
-            console.error("Firebase subscription error:", error);
+            console.error("Firebase error:", error);
             setDbSyncStatus('error');
-            setIsLoaded(true);
           }
         );
         return () => unsubscribe();
     } catch (err) {
-        console.error("Erro crítico ao conectar no Firestore:", err);
         setDbSyncStatus('error');
-        setIsLoaded(true);
     }
   }, []);
 
@@ -108,6 +102,7 @@ const App: React.FC = () => {
         if (!isNaN(bid)) {
             setAppState(prev => {
                 const newState = { ...prev, dollarRate: bid };
+                saveLocalInstant(newState); // Save local immediately
                 return newState;
             });
             setLastRateUpdate(Date.now());
@@ -121,7 +116,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!missingConfig) {
         fetchDollarRate();
-        const interval = setInterval(fetchDollarRate, 60000); // Update every 60s
+        const interval = setInterval(fetchDollarRate, 60000); 
         return () => clearInterval(interval);
     }
   }, [fetchDollarRate, missingConfig]);
@@ -132,11 +127,8 @@ const App: React.FC = () => {
       if (missingConfig || !db) return;
       setDbSyncStatus('syncing');
       try {
-          // Garante que o lastUpdated enviado é o atual
           const stateToSave = { ...state, lastUpdated: Date.now() };
           await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
-          
-          // Pequeno delay visual para mostrar 'Syncing'
           setTimeout(() => setDbSyncStatus('idle'), 500);
       } catch (err) {
           console.error("Error saving to cloud", err);
@@ -144,29 +136,27 @@ const App: React.FC = () => {
       }
   }, [missingConfig]);
 
-  // Debounced Auto-Save
+  // Debounced Cloud Save Only (Local is instant now)
   useEffect(() => {
-    if (!isLoaded || missingConfig) return;
-
-    // 1. Save Local (Imediato)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-
-    // 2. Save Cloud (Debounced - Reduzido para 500ms para salvar mais rápido)
+    if (missingConfig) return;
     const handler = setTimeout(() => {
         saveToCloud(appState);
-    }, 500); 
-
+    }, 1000); // 1 segundo de espera para salvar no banco (economiza escritas)
     return () => clearTimeout(handler);
-  }, [appState, isLoaded, saveToCloud, missingConfig]);
+  }, [appState, saveToCloud, missingConfig]);
 
 
   // Actions
   const updateState = (updates: Partial<AppState>) => {
-    setAppState(prev => ({ 
-        ...prev, 
-        ...updates,
-        lastUpdated: Date.now() // Always update timestamp on change
-    }));
+    setAppState(prev => {
+        const newState = { 
+            ...prev, 
+            ...updates,
+            lastUpdated: Date.now()
+        };
+        saveLocalInstant(newState); // SALVA IMEDIATAMENTE NO DISCO
+        return newState;
+    });
   };
 
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp'>) => {
@@ -192,8 +182,8 @@ const App: React.FC = () => {
         dollarRate: appState.dollarRate || INITIAL_STATE.dollarRate,
         lastUpdated: Date.now()
     };
-    // Force update to cloud immediately
     setAppState(newState);
+    saveLocalInstant(newState);
     saveToCloud(newState);
   };
 
@@ -215,6 +205,7 @@ const App: React.FC = () => {
                   const importedState = JSON.parse(e.target.result as string);
                   const mergedState = { ...INITIAL_STATE, ...importedState, lastUpdated: Date.now() };
                   setAppState(mergedState);
+                  saveLocalInstant(mergedState);
                   saveToCloud(mergedState);
               }
           } catch (err) {
@@ -230,14 +221,7 @@ const App: React.FC = () => {
               <h1 className="text-3xl text-[#FF6F00] font-black mb-4">CONFIGURAÇÃO NECESSÁRIA</h1>
               <div className="bg-[#111] border-2 border-white/20 p-6 max-w-xl text-left">
                   <p className="text-white mb-4">O app não conseguiu inicializar o Firebase.</p>
-                  <ol className="list-decimal pl-5 text-neutral-400 space-y-2 text-sm">
-                      <li>As chaves estão configuradas no código.</li>
-                      <li>Verifique se o seu deploy na Vercel está atualizado com o último commit.</li>
-                  </ol>
-                  <div className="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500 break-all">
-                      <span className="text-white font-bold block mb-1">DETALHES DO ERRO:</span>
-                      {initError ? initError : "DB Object is undefined (Configuração provavelmente não foi carregada)"}
-                  </div>
+                  <p className="text-xs text-neutral-500">{initError}</p>
               </div>
           </div>
       );
