@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tab } from '../types';
-import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart, Menu, X } from 'lucide-react';
+import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart, Menu, X, Save, Cloud } from 'lucide-react';
 
 interface LayoutProps {
   currentTab: Tab;
@@ -9,9 +9,10 @@ interface LayoutProps {
   setDollarRate: (rate: number) => void;
   onOpenSettings: () => void;
   onRefreshRate: () => void;
+  onManualSave: () => void; // Nova prop
   lastRateUpdate: number | null;
   isDbConnected: boolean;
-  dbSyncStatus: 'idle' | 'syncing' | 'error';
+  dbSyncStatus: 'idle' | 'syncing' | 'error' | 'success'; // Adicionado status success
   children: React.ReactNode;
 }
 
@@ -22,6 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({
   setDollarRate,
   onOpenSettings,
   onRefreshRate,
+  onManualSave,
   lastRateUpdate,
   isDbConnected,
   dbSyncStatus,
@@ -73,6 +75,33 @@ export const Layout: React.FC<LayoutProps> = ({
       setTab(tab);
       setIsMobileMenuOpen(false); // Close menu on mobile when clicking a link
   };
+
+  // Botão de salvar com feedback visual
+  const SaveButton = () => (
+    <button 
+        onClick={() => { onManualSave(); setIsMobileMenuOpen(false); }}
+        disabled={dbSyncStatus === 'syncing'}
+        className={`
+            w-full flex items-center justify-center gap-2 p-4 border-2 transition-all duration-150 uppercase mb-4 font-black tracking-widest
+            ${dbSyncStatus === 'success' 
+                ? 'bg-[#00e676] border-[#00e676] text-black shadow-[0px_0px_10px_#00e676]' 
+                : 'bg-[#111] border-[#00e676] text-[#00e676] hover:bg-[#00e676] hover:text-black shadow-[4px_4px_0px_0px_#00e676]'
+            }
+            active:translate-y-1 active:shadow-none
+        `}
+    >
+        {dbSyncStatus === 'syncing' ? (
+             <RotateCcw size={18} className="animate-spin" />
+        ) : dbSyncStatus === 'success' ? (
+             <Cloud size={18} />
+        ) : (
+             <Save size={18} />
+        )}
+        <span>
+            {dbSyncStatus === 'syncing' ? 'ENVIANDO...' : dbSyncStatus === 'success' ? 'SALVO!' : 'SALVAR DADOS'}
+        </span>
+    </button>
+  );
 
   return (
     <div className={`flex min-h-screen ${mainBgClass} text-white font-mono transition-colors duration-500 relative`}>
@@ -184,11 +213,16 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Footer / Settings */}
         <div className="p-6 border-t-2 border-white/20 bg-[#080808]">
+            
+            {/* BOTÃO MANUAL DE SALVAR */}
+            <SaveButton />
+
              {/* Sync Status Indicator */}
             <div className="flex items-center justify-between gap-2 mb-4 text-[10px] font-mono border border-dashed border-white/20 p-2">
-                <span className="text-neutral-500">STATUS:</span>
-                {dbSyncStatus === 'syncing' && <span className={`${brandColor} animate-pulse font-bold`}>SYNCING...</span>}
-                {dbSyncStatus === 'error' && <span className="text-[#ff4444] font-bold">ERROR</span>}
+                <span className="text-neutral-500">SERVER:</span>
+                {dbSyncStatus === 'syncing' && <span className={`${brandColor} animate-pulse font-bold`}>ENVIANDO...</span>}
+                {dbSyncStatus === 'error' && <span className="text-[#ff4444] font-bold">ERRO</span>}
+                {dbSyncStatus === 'success' && <span className="text-[#00e676] font-bold">SALVO</span>}
                 {isDbConnected && dbSyncStatus === 'idle' && <span className="text-[#00e676] font-bold">ONLINE</span>}
                 {!isDbConnected && <span className="text-neutral-600">OFFLINE</span>}
             </div>
@@ -203,7 +237,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 `}
             >
                 <Settings size={16} />
-                <span className="text-xs font-bold">{isDbConnected ? 'Config' : 'Connect'}</span>
+                <span className="text-xs font-bold">{isDbConnected ? 'Configurações' : 'Conectar'}</span>
             </button>
         </div>
       </aside>

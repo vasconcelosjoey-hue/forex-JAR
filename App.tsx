@@ -10,7 +10,7 @@ import { INITIAL_STATE } from './constants';
 import { db, initError } from './services/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-const STORAGE_KEY = 'JAR_DASHBOARD_V3_SYNCED';
+const STORAGE_KEY = 'JAR_DASHBOARD_V4_MANUAL';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
@@ -30,7 +30,8 @@ const App: React.FC = () => {
   
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error'>('syncing');
+  // Adicionei 'success' ao tipo de status
+  const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success'>('syncing');
   const [missingConfig, setMissingConfig] = useState(false);
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
 
@@ -47,8 +48,6 @@ const App: React.FC = () => {
       return cleanLocal !== cleanRemote;
   };
 
-  // Helper para garantir que o estado vindo do banco tenha a estrutura completa de drafts
-  // Isso evita que inputs zerem se o banco tiver dados parciais
   const sanitizeState = (remoteData: any): AppState => {
       return {
           ...INITIAL_STATE, // Garante base
@@ -77,7 +76,6 @@ const App: React.FC = () => {
           (docSnap) => {
             if (docSnap.exists()) {
               const remoteRaw = docSnap.data();
-              // Sanitiza os dados para garantir que drafts existam
               const remoteData = sanitizeState(remoteRaw);
               
               setAppState(currentLocal => {
@@ -87,7 +85,7 @@ const App: React.FC = () => {
                       return currentLocal;
                   }
 
-                  console.log("Recebendo atualização do servidor (Sync Inputs)...");
+                  console.log("Recebendo atualização do servidor...");
                   isRemoteUpdate.current = true; 
                   hasInitialLoad.current = true;
 
@@ -97,7 +95,7 @@ const App: React.FC = () => {
               });
               
             } else {
-              console.log("Banco vazio. Criando registro inicial.");
+              console.log("Banco vazio.");
               hasInitialLoad.current = true;
               setDbSyncStatus('idle');
             }
@@ -142,22 +140,34 @@ const App: React.FC = () => {
   }, [fetchDollarRate, missingConfig]);
 
 
-  // 3. SAVE FUNCTION
-  const saveToCloud = useCallback(async (state: AppState) => {
+  // 3. FUNÇÃO DE SALVAR (AUTO & MANUAL)
+  const saveToCloud = useCallback(async (state: AppState, isManual: boolean = false) => {
       if (missingConfig || !db) return;
       
       setDbSyncStatus('syncing');
       try {
+          // Atualiza timestamp para garantir que essa versão seja a "mais nova"
           const stateToSave = { ...state, lastUpdated: Date.now() };
           await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
-          setTimeout(() => setDbSyncStatus('idle'), 300);
+          
+          if (isManual) {
+              setDbSyncStatus('success');
+              setTimeout(() => setDbSyncStatus('idle'), 2000); // Mostra sucesso por 2s
+          } else {
+              setTimeout(() => setDbSyncStatus('idle'), 500);
+          }
       } catch (err) {
           console.error("Erro ao salvar:", err);
           setDbSyncStatus('error');
       }
   }, [missingConfig]);
 
-  // 4. AUTO-SAVE TRIGGER
+  // Função dedicada ao botão manual
+  const handleManualSave = () => {
+      saveToCloud(appState, true);
+  };
+
+  // 4. AUTO-SAVE TRIGGER (Background)
   useEffect(() => {
     if (missingConfig) return;
     if (!hasInitialLoad.current) return;
@@ -167,11 +177,10 @@ const App: React.FC = () => {
         return;
     }
 
-    // Debounce reduzido para 500ms para sync mais rápido de inputs
     const handler = setTimeout(() => {
         saveLocalInstant(appState);
-        saveToCloud(appState);
-    }, 500); 
+        saveToCloud(appState, false); // Save automático silencioso
+    }, 800); 
     
     return () => clearTimeout(handler);
   }, [appState, saveToCloud, missingConfig]);
@@ -180,9 +189,6 @@ const App: React.FC = () => {
   // ACTIONS
   const updateState = (updates: Partial<AppState>) => {
     setAppState(prev => {
-        // Merge profundo manual para drafts se necessário, ou shallow merge padrão
-        // Como 'updates' geralmente vem completo do componente, shallow resolve.
-        // Mas garantimos que drafts nunca seja undefined
         const newState = { 
             ...prev, 
             ...updates,
@@ -218,6 +224,7 @@ const App: React.FC = () => {
     setAppState(newState);
     hasInitialLoad.current = true;
     isRemoteUpdate.current = false;
+    handleManualSave(); // Força save limpo
   };
 
   const handleExport = () => {
@@ -269,6 +276,7 @@ const App: React.FC = () => {
         setDollarRate={setDollarRate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRefreshRate={fetchDollarRate}
+        onManualSave={handleManualSave} // Passando a função
         lastRateUpdate={lastRateUpdate}
         isDbConnected={true} 
         dbSyncStatus={dbSyncStatus}
