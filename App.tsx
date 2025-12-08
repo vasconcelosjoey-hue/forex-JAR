@@ -28,12 +28,8 @@ const App: React.FC = () => {
 
   // Initialize App Data and Database Connection
   useEffect(() => {
-    // Check for Firebase Config
-    // @ts-ignore
-    const env = import.meta.env || {};
-    
-    // Se não tiver chave configurada OU se o objeto db não foi criado (erro na init), mostra tela de config
-    if (!env.VITE_FIREBASE_API_KEY || !db) {
+    // Se o objeto db não foi criado (erro na init do services/firebase.ts), mostra tela de config
+    if (!db) {
         setMissingConfig(true);
         setIsLoaded(true);
         return;
@@ -212,9 +208,8 @@ const App: React.FC = () => {
               <div className="bg-[#111] border-2 border-white/20 p-6 max-w-xl text-left">
                   <p className="text-white mb-4">O app não encontrou as chaves do Firebase.</p>
                   <ol className="list-decimal pl-5 text-neutral-400 space-y-2 text-sm">
-                      <li>Verifique se você criou o arquivo <code className="text-[#00e676] bg-black px-1">.env</code></li>
-                      <li>Verifique se copiou as chaves corretas do site do Firebase.</li>
-                      <li>Se acabou de editar o arquivo, <strong>reinicie o terminal</strong>.</li>
+                      <li>Verifique se o objeto firebaseConfig está preenchido corretamente em <code className="text-[#00e676] bg-black px-1">services/firebase.ts</code></li>
+                      <li>Reinicie a página.</li>
                   </ol>
                   <div className="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500">
                       ERRO: Chaves não detectadas ou inicialização do DB falhou.
