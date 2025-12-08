@@ -10,7 +10,7 @@ import { INITIAL_STATE } from './constants';
 import { db, initError } from './services/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-const STORAGE_KEY = 'JAR_DASHBOARD_V4_MANUAL';
+const STORAGE_KEY = 'JAR_DASHBOARD_V5_FINAL';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
@@ -30,7 +30,6 @@ const App: React.FC = () => {
   
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  // Adicionei 'success' ao tipo de status
   const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success'>('syncing');
   const [missingConfig, setMissingConfig] = useState(false);
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
@@ -49,13 +48,17 @@ const App: React.FC = () => {
   };
 
   const sanitizeState = (remoteData: any): AppState => {
+      // Garante que a estrutura drafts exista profundamente
+      const baseDrafts = INITIAL_STATE.drafts;
+      const remoteDrafts = remoteData.drafts || {};
+
       return {
-          ...INITIAL_STATE, // Garante base
-          ...remoteData,    // Sobrescreve com dados do banco
+          ...INITIAL_STATE, 
+          ...remoteData,    
           drafts: {
-              roadmap: { ...INITIAL_STATE.drafts.roadmap, ...(remoteData.drafts?.roadmap || {}) },
-              withdrawals: { ...INITIAL_STATE.drafts.withdrawals, ...(remoteData.drafts?.withdrawals || {}) },
-              progress: { ...INITIAL_STATE.drafts.progress, ...(remoteData.drafts?.progress || {}) },
+              roadmap: { ...baseDrafts.roadmap, ...(remoteDrafts.roadmap || {}) },
+              withdrawals: { ...baseDrafts.withdrawals, ...(remoteDrafts.withdrawals || {}) },
+              progress: { ...baseDrafts.progress, ...(remoteDrafts.progress || {}) },
           },
           lastUpdated: Date.now()
       };
@@ -79,13 +82,14 @@ const App: React.FC = () => {
               const remoteData = sanitizeState(remoteRaw);
               
               setAppState(currentLocal => {
+                  // Se for igual, não faz nada
                   if (!isStateDifferent(currentLocal, remoteData)) {
                       setDbSyncStatus('idle');
                       hasInitialLoad.current = true;
                       return currentLocal;
                   }
 
-                  console.log("Recebendo atualização do servidor...");
+                  console.log("SYNC: Recebendo dados do servidor...");
                   isRemoteUpdate.current = true; 
                   hasInitialLoad.current = true;
 
@@ -146,13 +150,12 @@ const App: React.FC = () => {
       
       setDbSyncStatus('syncing');
       try {
-          // Atualiza timestamp para garantir que essa versão seja a "mais nova"
           const stateToSave = { ...state, lastUpdated: Date.now() };
           await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
           
           if (isManual) {
               setDbSyncStatus('success');
-              setTimeout(() => setDbSyncStatus('idle'), 2000); // Mostra sucesso por 2s
+              setTimeout(() => setDbSyncStatus('idle'), 2000);
           } else {
               setTimeout(() => setDbSyncStatus('idle'), 500);
           }
@@ -162,7 +165,6 @@ const App: React.FC = () => {
       }
   }, [missingConfig]);
 
-  // Função dedicada ao botão manual
   const handleManualSave = () => {
       saveToCloud(appState, true);
   };
@@ -179,7 +181,7 @@ const App: React.FC = () => {
 
     const handler = setTimeout(() => {
         saveLocalInstant(appState);
-        saveToCloud(appState, false); // Save automático silencioso
+        saveToCloud(appState, false); 
     }, 800); 
     
     return () => clearTimeout(handler);
@@ -224,7 +226,7 @@ const App: React.FC = () => {
     setAppState(newState);
     hasInitialLoad.current = true;
     isRemoteUpdate.current = false;
-    handleManualSave(); // Força save limpo
+    handleManualSave(); 
   };
 
   const handleExport = () => {
@@ -276,7 +278,7 @@ const App: React.FC = () => {
         setDollarRate={setDollarRate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRefreshRate={fetchDollarRate}
-        onManualSave={handleManualSave} // Passando a função
+        onManualSave={handleManualSave}
         lastRateUpdate={lastRateUpdate}
         isDbConnected={true} 
         dbSyncStatus={dbSyncStatus}

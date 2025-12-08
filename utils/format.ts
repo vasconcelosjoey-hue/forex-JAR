@@ -19,8 +19,16 @@ export const formatCurrencyInput = (value: string, decimals: number = 2): string
 
 export const formatCurrencyDisplay = (value: number | string, decimals: number = 2): string => {
     if (value === '' || value === undefined || value === null) return '';
-    const num = typeof value === 'string' ? parseFloat(value) : value;
+    
+    // CORREÇÃO CRÍTICA: Se o valor já é string, assumimos que já está formatado (estado dos Drafts)
+    // Isso impede que "1.500,00" vire "1,00" ao ser re-processado pelo parseFloat
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    const num = value;
     if (isNaN(num)) return '';
+    
     return num.toLocaleString('pt-BR', { 
         minimumFractionDigits: decimals, 
         maximumFractionDigits: decimals 
