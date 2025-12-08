@@ -121,7 +121,13 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
        {/* 1. Control Bar & Daily Action */}
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            <Card className="lg:col-span-10 p-6" color="success">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-end">
+                {/* 
+                   RESPONSIVIDADE AQUI: 
+                   grid-cols-1 (celular) -> Um embaixo do outro
+                   sm:grid-cols-2 (tablet pequeno) -> Dois lado a lado
+                   lg:grid-cols-5 (desktop) -> Linha única 
+                */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                     <Input 
                         label="Data Início" 
                         type="date" 
@@ -131,6 +137,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                         className="w-full"
                     />
                     
+                    {/* Grupo de Aporte e Add */}
                     <div className="lg:col-span-2 grid grid-cols-2 gap-4">
                         <Input 
                             label="Aporte (USD)" 
@@ -186,7 +193,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            {/* Save Button Card */}
            <button 
                 onClick={handleRegisterDay}
-                className="lg:col-span-2 bg-[#00e676] hover:bg-white text-black font-black uppercase tracking-widest border-2 border-transparent hover:border-[#00e676] shadow-[4px_4px_0px_0px_white] hover:shadow-[4px_4px_0px_0px_#00e676] transition-all flex flex-col items-center justify-center gap-2 p-4 active:translate-y-1 active:shadow-none"
+                className="lg:col-span-2 bg-[#00e676] hover:bg-white text-black font-black uppercase tracking-widest border-2 border-transparent hover:border-[#00e676] shadow-[4px_4px_0px_0px_white] hover:shadow-[4px_4px_0px_0px_#00e676] transition-all flex flex-col items-center justify-center gap-2 p-4 active:translate-y-1 active:shadow-none min-h-[80px]"
            >
                <Save size={24} />
                <span>REGISTRAR</span>
@@ -199,8 +206,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
             
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                 {/* Left: Big Number */}
-                <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-4 md:pb-0 md:pr-8">
-                     <div className="text-[10px] uppercase font-bold text-neutral-500 tracking-[0.2em] mb-2 flex items-center gap-2">
+                <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-4 md:pb-0 md:pr-8 w-full md:w-auto">
+                     <div className="text-[10px] uppercase font-bold text-neutral-500 tracking-[0.2em] mb-2 flex items-center justify-center md:justify-start gap-2">
                         <Target size={14} className="text-[#00e676]" />
                         Target: 1M
                      </div>
