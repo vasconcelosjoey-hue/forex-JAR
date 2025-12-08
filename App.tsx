@@ -53,12 +53,31 @@ const App: React.FC = () => {
             setIsLoaded(true);
             if (docSnap.exists()) {
               const remoteData = docSnap.data() as AppState;
-              console.log("Received update from Firebase");
               
-              // Simple merge: Remote data takes precedence for shared state
-              setAppState(remoteData);
+              setAppState(currentLocalState => {
+                  // LÓGICA DE SMART MERGE (Preservar Inputs)
+                  // Se o estado local tem um timestamp mais recente que o remoto, 
+                  // significa que o usuário digitou algo e deu refresh antes de salvar no banco.
+                  // Nesse caso, PRESERVAMOS os 'drafts' (inputs) locais, mas aceitamos
+                  // a verdade financeira (transações/saldos) do banco.
+                  
+                  if (currentLocalState.lastUpdated > remoteData.lastUpdated) {
+                      console.log("Conflito de Sync: Mantendo rascunhos locais mais recentes.");
+                      return {
+                          ...remoteData, // Pega dados confirmados do servidor
+                          drafts: currentLocalState.drafts, // Mantém o que o usuário estava escrevendo
+                          lastUpdated: currentLocalState.lastUpdated // Mantém data recente para forçar o próximo save
+                      };
+                  }
+
+                  // Caso normal: O banco é mais novo ou igual, aceita tudo do banco.
+                  setDbSyncStatus('idle');
+                  return remoteData;
+              });
+
+              // Atualiza o localstorage para garantir redundância
               localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
-              setDbSyncStatus('idle');
+              
             } else {
               console.log("No global document found. Using initial/local state.");
               // Create the initial document if it doesn't exist
@@ -113,8 +132,12 @@ const App: React.FC = () => {
       if (missingConfig || !db) return;
       setDbSyncStatus('syncing');
       try {
-          await setDoc(doc(db, 'jar_state', 'global'), state);
-          setDbSyncStatus('idle');
+          // Garante que o lastUpdated enviado é o atual
+          const stateToSave = { ...state, lastUpdated: Date.now() };
+          await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
+          
+          // Pequeno delay visual para mostrar 'Syncing'
+          setTimeout(() => setDbSyncStatus('idle'), 500);
       } catch (err) {
           console.error("Error saving to cloud", err);
           setDbSyncStatus('error');
@@ -125,13 +148,13 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isLoaded || missingConfig) return;
 
-    // 1. Save Local
+    // 1. Save Local (Imediato)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 
-    // 2. Save Cloud (Debounced)
+    // 2. Save Cloud (Debounced - Reduzido para 500ms para salvar mais rápido)
     const handler = setTimeout(() => {
         saveToCloud(appState);
-    }, 1000); // 1 second debounce
+    }, 500); 
 
     return () => clearTimeout(handler);
   }, [appState, isLoaded, saveToCloud, missingConfig]);
