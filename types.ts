@@ -59,6 +59,9 @@ export interface AppState {
   drafts: Drafts;
 }
 
+// Alias solicitado para definir o estado global compartilhado
+export type DashboardState = AppState;
+
 export interface WithdrawalCalculation {
   taxAmount: number;
   netAmount: number;

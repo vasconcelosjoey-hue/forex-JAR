@@ -5,17 +5,16 @@ import { Progress } from './views/Progress';
 import { Withdrawals } from './views/Withdrawals';
 import { Dashboard } from './views/Dashboard';
 import { DatabaseModal } from './components/DatabaseModal';
-import { Tab, AppState, Transaction } from './types';
+import { Tab, AppState, Transaction, DashboardState } from './types';
 import { INITIAL_STATE } from './constants';
-import { db, initError } from './services/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db, initError, saveDashboardState, subscribeToDashboardState } from './services/firebase';
 
-const STORAGE_KEY = 'JAR_DASHBOARD_V5_FINAL';
+const STORAGE_KEY = 'JAR_DASHBOARD_V6_REALTIME';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
   
-  // Inicializa com LocalStorage
+  // 1. Inicializa Estado
   const [appState, setAppState] = useState<AppState>(() => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -35,20 +34,9 @@ const App: React.FC = () => {
   const [lastRateUpdate, setLastRateUpdate] = useState<number | null>(null);
 
   const isRemoteUpdate = useRef(false);
-  const hasInitialLoad = useRef(false);
 
-  const saveLocalInstant = (state: AppState) => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  };
-
-  const isStateDifferent = (local: AppState, remote: AppState) => {
-      const cleanLocal = JSON.stringify({ ...local, lastUpdated: 0 });
-      const cleanRemote = JSON.stringify({ ...remote, lastUpdated: 0 });
-      return cleanLocal !== cleanRemote;
-  };
-
-  const sanitizeState = (remoteData: any): AppState => {
-      // Garante que a estrutura drafts exista profundamente
+  // Helper para garantir estrutura de dados válida vindo do servidor
+  const sanitizeState = (remoteData: any): DashboardState => {
       const baseDrafts = INITIAL_STATE.drafts;
       const remoteDrafts = remoteData.drafts || {};
 
@@ -60,11 +48,10 @@ const App: React.FC = () => {
               withdrawals: { ...baseDrafts.withdrawals, ...(remoteDrafts.withdrawals || {}) },
               progress: { ...baseDrafts.progress, ...(remoteDrafts.progress || {}) },
           },
-          lastUpdated: Date.now()
       };
   };
 
-  // 1. LISTENER DO FIREBASE
+  // 2. SUBSCRIPTION (Realtime Listener)
   useEffect(() => {
     setIsLoaded(true);
 
@@ -73,50 +60,37 @@ const App: React.FC = () => {
         return;
     }
     
-    try {
-        console.log("Conectando ao Firebase...");
-        const unsubscribe = onSnapshot(doc(db, 'jar_state', 'global'), 
-          (docSnap) => {
-            if (docSnap.exists()) {
-              const remoteRaw = docSnap.data();
-              const remoteData = sanitizeState(remoteRaw);
-              
-              setAppState(currentLocal => {
-                  // Se for igual, não faz nada
-                  if (!isStateDifferent(currentLocal, remoteData)) {
-                      setDbSyncStatus('idle');
-                      hasInitialLoad.current = true;
-                      return currentLocal;
-                  }
-
-                  console.log("SYNC: Recebendo dados do servidor...");
-                  isRemoteUpdate.current = true; 
-                  hasInitialLoad.current = true;
-
-                  saveLocalInstant(remoteData);
-                  setDbSyncStatus('idle');
-                  return remoteData;
-              });
-              
-            } else {
-              console.log("Banco vazio.");
-              hasInitialLoad.current = true;
-              setDbSyncStatus('idle');
+    console.log("Iniciando subscrição em tempo real...");
+    
+    // Usa a função do service conforme solicitado
+    const unsubscribe = subscribeToDashboardState((newState) => {
+        const sanitized = sanitizeState(newState);
+        
+        // Verificação simples para evitar re-render desnecessário se for idêntico
+        setAppState(currentState => {
+            const currentStr = JSON.stringify({ ...currentState, lastUpdated: 0 });
+            const newStr = JSON.stringify({ ...sanitized, lastUpdated: 0 });
+            
+            if (currentStr === newStr) {
+                setDbSyncStatus('idle');
+                return currentState;
             }
-          }, 
-          (error) => {
-            console.error("Erro Firebase:", error);
-            setDbSyncStatus('error');
-            hasInitialLoad.current = true;
-          }
-        );
-        return () => unsubscribe();
-    } catch (err) {
-        setDbSyncStatus('error');
-    }
+
+            console.log("SYNC: Atualização recebida do servidor.");
+            isRemoteUpdate.current = true; // Marca flag para evitar loop de auto-save imediato
+            
+            // Persiste localmente também
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+            
+            setDbSyncStatus('idle');
+            return sanitized;
+        });
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // 2. DOLLAR RATE
+  // 3. DOLLAR RATE (Background Fetch)
   const fetchDollarRate = useCallback(async () => {
     try {
         const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
@@ -144,14 +118,14 @@ const App: React.FC = () => {
   }, [fetchDollarRate, missingConfig]);
 
 
-  // 3. FUNÇÃO DE SALVAR (AUTO & MANUAL)
-  const saveToCloud = useCallback(async (state: AppState, isManual: boolean = false) => {
+  // 4. SAVE FUNCTION (Centralizada no Service)
+  const handleSaveToCloud = useCallback(async (state: AppState, isManual: boolean = false) => {
       if (missingConfig || !db) return;
       
       setDbSyncStatus('syncing');
       try {
-          const stateToSave = { ...state, lastUpdated: Date.now() };
-          await setDoc(doc(db, 'jar_state', 'global'), stateToSave);
+          // Usa a função exportada do service
+          await saveDashboardState(state);
           
           if (isManual) {
               setDbSyncStatus('success');
@@ -166,37 +140,36 @@ const App: React.FC = () => {
   }, [missingConfig]);
 
   const handleManualSave = () => {
-      saveToCloud(appState, true);
+      handleSaveToCloud(appState, true);
   };
 
-  // 4. AUTO-SAVE TRIGGER (Background)
+  // 5. AUTO-SAVE (Background Debounce)
   useEffect(() => {
     if (missingConfig) return;
-    if (!hasInitialLoad.current) return;
 
+    // Se a atualização veio do servidor, não disparamos o save de volta imediatamente
     if (isRemoteUpdate.current) {
         isRemoteUpdate.current = false;
         return;
     }
 
     const handler = setTimeout(() => {
-        saveLocalInstant(appState);
-        saveToCloud(appState, false); 
-    }, 800); 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        handleSaveToCloud(appState, false); 
+    }, 1000); // 1 segundo de debounce para auto-save
     
     return () => clearTimeout(handler);
-  }, [appState, saveToCloud, missingConfig]);
+  }, [appState, handleSaveToCloud, missingConfig]);
 
 
-  // ACTIONS
+  // --- STATE ACTIONS ---
   const updateState = (updates: Partial<AppState>) => {
     setAppState(prev => {
-        const newState = { 
+        return { 
             ...prev, 
             ...updates,
             lastUpdated: Date.now()
         };
-        return newState;
     });
   };
 
@@ -224,8 +197,6 @@ const App: React.FC = () => {
         lastUpdated: Date.now()
     };
     setAppState(newState);
-    hasInitialLoad.current = true;
-    isRemoteUpdate.current = false;
     handleManualSave(); 
   };
 
@@ -247,6 +218,7 @@ const App: React.FC = () => {
                   const importedState = JSON.parse(e.target.result as string);
                   const mergedState = { ...INITIAL_STATE, ...importedState, lastUpdated: Date.now() };
                   setAppState(mergedState);
+                  handleManualSave(); // Salva imediatamente no cloud ao importar
               }
           } catch (err) {
               alert("Erro ao ler arquivo de backup.");
