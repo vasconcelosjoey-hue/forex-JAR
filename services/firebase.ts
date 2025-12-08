@@ -12,12 +12,14 @@ const firebaseConfig = {
 };
 
 let db: Firestore;
+let initError: string | null = null;
 
 try {
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
-} catch (e) {
+} catch (e: any) {
   console.error("Erro fatal ao inicializar Firebase:", e);
+  initError = e.message || JSON.stringify(e);
 }
 
-export { db };
+export { db, initError };

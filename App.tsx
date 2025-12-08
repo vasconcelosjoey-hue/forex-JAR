@@ -7,7 +7,7 @@ import { Dashboard } from './views/Dashboard';
 import { DatabaseModal } from './components/DatabaseModal';
 import { Tab, AppState, Transaction } from './types';
 import { INITIAL_STATE } from './constants';
-import { db } from './services/firebase';
+import { db, initError } from './services/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 const STORAGE_KEY = 'JAR_DASHBOARD_V1';
@@ -206,20 +206,21 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-8 text-center font-mono">
               <h1 className="text-3xl text-[#FF6F00] font-black mb-4">CONFIGURAÇÃO NECESSÁRIA</h1>
               <div className="bg-[#111] border-2 border-white/20 p-6 max-w-xl text-left">
-                  <p className="text-white mb-4">O app não encontrou as chaves do Firebase.</p>
+                  <p className="text-white mb-4">O app não conseguiu inicializar o Firebase.</p>
                   <ol className="list-decimal pl-5 text-neutral-400 space-y-2 text-sm">
-                      <li>Verifique se o objeto firebaseConfig está preenchido corretamente em <code className="text-[#00e676] bg-black px-1">services/firebase.ts</code></li>
-                      <li>Reinicie a página.</li>
+                      <li>As chaves estão configuradas no código.</li>
+                      <li>Verifique se o seu deploy na Vercel está atualizado com o último commit.</li>
                   </ol>
-                  <div className="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500">
-                      ERRO: Chaves não detectadas ou inicialização do DB falhou.
+                  <div className="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500 break-all">
+                      <span className="text-white font-bold block mb-1">DETALHES DO ERRO:</span>
+                      {initError ? initError : "DB Object is undefined (Configuração provavelmente não foi carregada)"}
                   </div>
               </div>
           </div>
       );
   }
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#FF6F00] font-black animate-pulse">LOADING J.A.R. FIREBASE...</div>;
+  if (!isLoaded) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#FF6F00] font-black animate-pulse">LOADING J.A.R. SYSTEM...</div>;
 
   return (
     <>
