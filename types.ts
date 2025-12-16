@@ -24,6 +24,7 @@ export interface DailyRecord {
   balanceUsd: number; // Snapshot of balance
   rate: number;       // Snapshot of dollar rate
   centsBrl: number;   // Calculated score at that moment
+  investedUsd?: number; // Snapshot of total deposited (Capital Principal) at that moment
 }
 
 export interface Drafts {

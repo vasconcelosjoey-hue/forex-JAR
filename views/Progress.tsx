@@ -2,7 +2,7 @@ import React from 'react';
 import { AppState, DailyRecord } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { Calendar, Target, Plus, ArrowUpRight, Save, Trash2, Flag } from 'lucide-react';
+import { Calendar, Target, Plus, ArrowUpRight, Save, Trash2, Flag, Percent, Wallet, ArrowRight } from 'lucide-react';
 import { parseCurrency } from '../utils/format';
 
 interface ProgressProps {
@@ -21,6 +21,9 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   const growthPercentage = state.startDepositUsd > 0 
     ? (totalGrowthUsd / state.startDepositUsd) * 100 
     : 0;
+  
+  // New Calculation: Daily Percentage Yield
+  const dailyYieldPercent = daysElapsed > 0 ? growthPercentage / daysElapsed : 0;
   
   const standardUsd = totalGrowthUsd;
   const standardBrl = standardUsd * state.dollarRate;
@@ -45,6 +48,9 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   const handleAddToStartDeposit = () => {
     const amountToAdd = parseCurrency(state.drafts.progress?.additionalDeposit || '0');
     if (!isNaN(amountToAdd) && amountToAdd > 0) {
+        // LÓGICA DE SEGURANÇA:
+        // Adiciona ao Capital Inicial (Aporte) E ao Saldo Atual.
+        // Isso matematicamente anula o valor no cálculo de lucro, mantendo o histórico de performance intacto.
         updateState({
             startDepositUsd: state.startDepositUsd + amountToAdd,
             currentBalanceUsd: state.currentBalanceUsd + amountToAdd, 
@@ -72,6 +78,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
       const dateToRegister = state.currentDate; // Input value is YYYY-MM-DD
       const balanceSnapshot = state.currentBalanceUsd;
       const rateSnapshot = state.dollarRate;
+      const investedSnapshot = state.startDepositUsd; // Captura o capital investido atual
       
       // Recalcula o score (Cents BRL) para garantir precisão no momento do clique
       const scoreSnapshot = calculateCentsBrl(balanceSnapshot, rateSnapshot);
@@ -80,7 +87,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
           date: dateToRegister,
           balanceUsd: balanceSnapshot,
           rate: rateSnapshot,
-          centsBrl: scoreSnapshot
+          centsBrl: scoreSnapshot,
+          investedUsd: investedSnapshot // Salva quanto dinheiro "do bolso" existia nesse dia
       };
 
       // 2. Manipulação Inteligente do Histórico
@@ -116,17 +124,11 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-full font-mono">
+    <div className="flex flex-col gap-6 max-w-full font-mono pb-12">
        
        {/* 1. Control Bar & Daily Action */}
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            <Card className="lg:col-span-10 p-6" color="success">
-                {/* 
-                   RESPONSIVIDADE AQUI: 
-                   grid-cols-1 (celular) -> Um embaixo do outro
-                   sm:grid-cols-2 (tablet pequeno) -> Dois lado a lado
-                   lg:grid-cols-5 (desktop) -> Linha única 
-                */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                     <Input 
                         label="Data Início" 
@@ -138,9 +140,14 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                     />
                     
                     {/* Grupo de Aporte e Add */}
-                    <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="lg:col-span-2 grid grid-cols-2 gap-4 relative">
+                        {/* Linha conectora visual para indicar relação */}
+                        <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-neutral-600 hidden md:block">
+                            <ArrowRight size={16} />
+                        </div>
+
                         <Input 
-                            label="Aporte (USD)" 
+                            label="Total Aportado (USD)" 
                             mask="currency" 
                             prefix="$"
                             variant="success"
@@ -148,7 +155,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                             onChange={(e) => updateState({ startDepositUsd: parseCurrency(e.target.value) })}
                         />
                         <Input 
-                            label="Add (+)" 
+                            label="Novo Aporte (+)" 
                             mask="currency"
                             prefix="$"
                             placeholder="0,00"
@@ -163,6 +170,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                             actionButton={
                                 <button 
                                     onClick={handleAddToStartDeposit}
+                                    title="Adicionar ao Capital e Saldo (Não conta como lucro)"
                                     className="bg-[#111] hover:bg-[#00e676] hover:text-black border-l-2 border-[#00e676]/50 text-neutral-400 h-full px-4 transition-colors flex items-center justify-center rounded-none"
                                 >
                                     <Plus size={16} />
@@ -179,7 +187,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                         onChange={(e) => updateState({ currentDate: e.target.value })}
                     />
                     <Input 
-                        label="Saldo (USD)" 
+                        label="Saldo Total (USD)" 
                         mask="currency"
                         prefix="$"
                         variant="success"
@@ -247,10 +255,18 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
             <StatsCard label="Dias" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
             
             <StatsCard 
-                label="Variação" 
+                label="Variação Total" 
                 value={`${growthPercentage.toFixed(2)}%`} 
                 color={growthPercentage >= 0 ? 'success' : 'danger'}
                 icon={<ArrowUpRight size={16} />}
+            />
+
+            {/* NEW DAILY % CARD */}
+            <StatsCard 
+                label="% Diário (Avg)" 
+                value={`${dailyYieldPercent.toFixed(2)}%`}
+                color="gold"
+                icon={<Percent size={16} />}
             />
             
             <StatsCard 
@@ -283,8 +299,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
             <StatsCard 
                 label="Média Diária (BRL)" 
                 value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
-                color="gold"
-                className="col-span-2 md:col-span-2 bg-[#111] border-white/40"
+                color="purple"
             />
        </div>
 
@@ -318,13 +333,34 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                 ? record.centsBrl 
                                 : record.centsBrl - (prevRecord?.centsBrl || 0);
 
+                           // LÓGICA DE DETECÇÃO DE APORTE (NOVO)
+                           // Se o valor investido neste registro for MAIOR que o anterior, houve aporte.
+                           // Fallback: se investedUsd não existir (registros antigos), usa o atual global ou 0, evitando alertas falsos.
+                           const currentInvested = record.investedUsd;
+                           const prevInvested = prevRecord?.investedUsd;
+                           
+                           let depositDiff = 0;
+                           if (currentInvested !== undefined && prevInvested !== undefined) {
+                               depositDiff = currentInvested - prevInvested;
+                           }
+
                            return (
                                <tr key={record.date} className="border-b border-white/5 hover:bg-[#00e676] hover:text-black transition-colors group">
                                    <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">
                                        {formatDateDisplay(record.date)}
                                    </td>
-                                   <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">
-                                       $ {record.balanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                   <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10 relative">
+                                       <div className="flex flex-col">
+                                           <span>$ {record.balanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                           
+                                           {/* VISUAL INDICATOR FOR DEPOSIT */}
+                                           {depositDiff > 1 && (
+                                               <span className="text-[9px] font-black text-cyan-400 group-hover:text-black flex items-center gap-1 mt-1 bg-cyan-400/10 group-hover:bg-black/10 px-1 w-fit">
+                                                   <Wallet size={10} />
+                                                   CAPITAL +{depositDiff.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                               </span>
+                                           )}
+                                       </div>
                                    </td>
                                    <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">
                                        {record.rate.toFixed(4)}

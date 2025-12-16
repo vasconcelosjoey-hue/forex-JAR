@@ -67,7 +67,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
   const progressPercentage = Math.min((totalBrlDeposited / finalGoal) * 100, 100);
 
   return (
-    <div className="flex flex-col gap-6 h-[calc(100vh-5rem)] overflow-hidden font-mono">
+    <div className="flex flex-col gap-6 w-full font-mono pb-10">
       
       {/* Top Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-shrink-0">
@@ -174,18 +174,18 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
          })}
       </div>
 
-      {/* History */}
-      <Card className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden border-white/20 bg-[#000]" title="">
+      {/* History - NOW FULLY VISIBLE */}
+      <Card className="flex flex-col p-0 border-white/20 bg-[#000]" title="">
          <div className="px-6 py-4 border-b-2 border-white/20 bg-[#111] flex justify-between items-center">
             <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
                 <Square size={10} className="fill-[#FF6F00] stroke-none" />
-                Histórico
+                Histórico Completo
             </h3>
-            <span className="text-[10px] text-black bg-white px-2 py-1 font-bold uppercase">Scroll Down</span>
+            {/* Scroll indicator removed as we are now using full page scroll */}
          </div>
-         <div className="flex-1 overflow-y-auto">
+         <div className="w-full">
              <table className="w-full text-left border-collapse">
-                 <thead className="sticky top-0 bg-[#000] text-[10px] uppercase text-neutral-500 font-bold z-10 border-b-2 border-white/20">
+                 <thead className="bg-[#000] text-[10px] uppercase text-neutral-500 font-bold border-b-2 border-white/20">
                      <tr>
                          <th className="py-3 px-6 border-r border-white/10">Data</th>
                          <th className="py-3 px-6 border-r border-white/10">Sócio</th>
@@ -214,6 +214,13 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
                              </td>
                          </tr>
                      ))}
+                      {state.transactions.filter(t => t.type === 'DEPOSIT').length === 0 && (
+                          <tr>
+                              <td colSpan={4} className="py-8 text-center text-neutral-500 text-xs uppercase">
+                                  Nenhum aporte registrado.
+                              </td>
+                          </tr>
+                      )}
                  </tbody>
              </table>
          </div>

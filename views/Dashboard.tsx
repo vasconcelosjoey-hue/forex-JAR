@@ -1,88 +1,131 @@
 import React, { useState, useMemo } from 'react';
-import { AppState, PartnerName } from '../types';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, MousePointer2, Activity, Target } from 'lucide-react';
+import { AppState } from '../types';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { Activity, TrendingUp, Calendar, Target, DollarSign, Zap } from 'lucide-react';
+import { Card } from '../components/ui/Card';
 
 interface DashboardProps {
   state: AppState;
 }
 
 const NEON_COLORS = {
+  green: '#00e676',
   purple: '#d500f9',
   cyan: '#00e5ff',
-  lime: '#76ff03',
-  hotpink: '#ff4081'
-};
-
-const TIMEFRAMES = {
-  '7D': 7,
-  '30D': 30,
-  '1Y': 365
+  orange: '#FF6F00'
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
-  const [activeNeon, setActiveNeon] = useState<keyof typeof NEON_COLORS>('purple');
-  const [timeframe, setTimeframe] = useState<keyof typeof TIMEFRAMES>('30D');
+  const [activeNeon, setActiveNeon] = useState<keyof typeof NEON_COLORS>('green');
   const neonHex = NEON_COLORS[activeNeon];
 
-  // --- 1. Data Prep for Evolution Chart ---
-  const chartData = useMemo(() => {
-    const history = [...state.dailyHistory];
-    const sorted = history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - TIMEFRAMES[timeframe]);
-    
-    return sorted
-      .filter(item => new Date(item.date) >= cutoff)
-      .map(item => ({
-        date: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        fullDate: item.date,
-        value: item.centsBrl,
-        balance: item.balanceUsd
+  // --- 1. CÁLCULOS INTELIGENTES (KPIs) ---
+  const stats = useMemo(() => {
+      const startBalance = state.startDepositUsd || 1; // Evita divisão por zero
+      const currentBalance = state.currentBalanceUsd;
+      const profitUsd = currentBalance - state.startDepositUsd;
+      const profitBrl = profitUsd * state.dollarRate;
+      const roi = (profitUsd / startBalance) * 100;
+
+      // Dias corridos
+      const start = new Date(state.startDate);
+      const now = new Date(state.currentDate);
+      const diffTime = Math.abs(now.getTime() - start.getTime());
+      const daysElapsed = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+
+      const dailyAvgUsd = profitUsd / daysElapsed;
+      const dailyAvgBrl = profitBrl / daysElapsed;
+
+      // Projeção (30 dias)
+      const projectedUsd = currentBalance + (dailyAvgUsd * 30);
+      const projectedProfitBrl = dailyAvgBrl * 30;
+
+      return {
+          profitUsd,
+          profitBrl,
+          roi,
+          dailyAvgBrl,
+          projectedProfitBrl,
+          daysElapsed
+      };
+  }, [state]);
+
+  // --- 2. PREPARAÇÃO DE DADOS DO GRÁFICO (EVOLUÇÃO) ---
+  const evolutionData = useMemo(() => {
+      // Pega o histórico, ordena por data
+      const sortedHistory = [...(state.dailyHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Mapeia para o formato do gráfico
+      return sortedHistory.map(item => ({
+          date: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+          fullDate: item.date,
+          balance: item.balanceUsd,
+          centsBrl: item.centsBrl, // Usaremos o score em BRL para visualização
+          rate: item.rate
       }));
-  }, [state.dailyHistory, timeframe]);
+  }, [state.dailyHistory]);
 
-  // --- 2. Data Prep for Roadmap (Gauge) ---
-  const roadmapGoal = 55000;
-  const totalDeposited = useMemo(() => {
-     return state.transactions
-        .filter(t => t.type === 'DEPOSIT' && t.partner !== 'TAX')
-        .reduce((acc, t) => acc + t.amountBrl, 0);
-  }, [state.transactions]);
+  // --- 3. ANÁLISE MENSAL (AGRUPAMENTO) ---
+  const monthlyData = useMemo(() => {
+      const history = [...(state.dailyHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const months: Record<string, number> = {};
 
-  // Gauge Logic
-  const gaugeData = [
-      { name: 'Progress', value: Math.min(totalDeposited, roadmapGoal) },
-      { name: 'Remaining', value: Math.max(0, roadmapGoal - totalDeposited) }
-  ];
+      // Lógica: Calcula a diferença de centsBrl entre o último registro de um mês e o último do mês anterior
+      // Para simplificar neste MVP: Vamos somar o "Resultado Dia" calculado
+      
+      let previousCents = 0;
+
+      history.forEach((record, index) => {
+          const date = new Date(record.date);
+          const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).toUpperCase();
+          
+          // Se for o primeiro registro global, o lucro é ele mesmo. Se não, é a diferença.
+          const dayProfit = index === 0 ? record.centsBrl : record.centsBrl - previousCents;
+          previousCents = record.centsBrl;
+
+          if (!months[monthKey]) months[monthKey] = 0;
+          months[monthKey] += dayProfit;
+      });
+
+      return Object.entries(months).map(([name, value]) => ({ name, value }));
+  }, [state.dailyHistory]);
+
+  // --- 4. WIN RATE (DIAS VERDES VS VERMELHOS) ---
+  const winRateData = useMemo(() => {
+      const history = [...(state.dailyHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      let wins = 0;
+      let loss = 0;
+      let prev = 0;
+
+      history.forEach((h, i) => {
+          const val = h.centsBrl;
+          const diff = i === 0 ? val : val - prev;
+          if (diff >= 0) wins++;
+          else loss++;
+          prev = val;
+      });
+
+      return [
+          { name: 'GAIN', value: wins },
+          { name: 'LOSS', value: loss }
+      ];
+  }, [state.dailyHistory]);
   
-  const progressPercent = Math.min((totalDeposited / roadmapGoal) * 100, 100);
-
-  // --- 3. Data Prep for Partners Bar Chart ---
-  const partnerData = useMemo(() => {
-    const partners: PartnerName[] = ['JOEY', 'ALEX', 'RUBINHO'];
-    return partners.map(p => {
-        const total = state.transactions
-            .filter(t => t.type === 'DEPOSIT' && t.partner === p)
-            .reduce((acc, t) => acc + t.amountBrl, 0);
-        return { name: p, value: total };
-    });
-  }, [state.transactions]);
-
+  const totalDaysRegistered = winRateData[0].value + winRateData[1].value;
+  const winPercent = totalDaysRegistered > 0 ? (winRateData[0].value / totalDaysRegistered) * 100 : 0;
 
   return (
-    <div className="text-black space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-end border-b-4 border-black pb-4">
+      {/* HEADER & THEME SELECTOR */}
+      <div className="flex flex-col md:flex-row justify-between items-end border-b-2 border-white/20 pb-4 bg-[#111] p-6 shadow-[4px_4px_0px_0px_white]">
           <div>
-              <h2 className="text-5xl font-black uppercase tracking-tighter leading-none mb-2 flex items-center gap-3">
-                <Activity className={`text-[${neonHex}]`} size={48} style={{ color: neonHex }} />
-                J.A.R.<span className="text-neutral-400"> DASH</span>
+              <h2 className="text-4xl font-black uppercase tracking-tighter leading-none mb-1 text-white flex items-center gap-3">
+                <Activity size={32} style={{ color: neonHex }} />
+                DASHBOARD
               </h2>
-              <p className="font-mono font-bold text-xs bg-black text-white inline-block px-2 py-1 uppercase">
-                Premium Analytics Module
+              <p className="font-mono text-[10px] text-neutral-500 font-bold uppercase tracking-widest">
+                Inteligência de Mercado • J.A.R. System
               </p>
           </div>
           
@@ -91,7 +134,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
                  <button
                     key={name}
                     onClick={() => setActiveNeon(name as any)}
-                    className={`w-6 h-6 border-2 border-black transition-transform hover:scale-110 ${activeNeon === name ? 'ring-2 ring-offset-2 ring-black' : ''}`}
+                    className={`w-6 h-6 border-2 border-white transition-all ${activeNeon === name ? 'scale-110 shadow-[0px_0px_10px_white]' : 'opacity-40 hover:opacity-100'}`}
                     style={{ backgroundColor: color }}
                     title={name}
                  />
@@ -99,181 +142,212 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
           </div>
       </div>
 
-      {/* MAIN CHART SECTION */}
-      <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-6 relative overflow-hidden">
-          <div className="flex justify-between items-center mb-6">
-              <div>
-                  <h3 className="text-xl font-black uppercase tracking-wide">Evolução Diária (Cents BRL)</h3>
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-neutral-500 mt-1">
-                      <Calendar size={12} />
-                      <span>START DATE: {new Date(state.startDate).toLocaleDateString('pt-BR')}</span>
-                  </div>
-              </div>
-              
-              <div className="flex bg-neutral-100 border-2 border-black">
-                  {Object.keys(TIMEFRAMES).map((tf) => (
-                      <button
-                        key={tf}
-                        onClick={() => setTimeframe(tf as any)}
-                        className={`px-4 py-2 font-bold text-sm transition-colors ${timeframe === tf ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
-                      >
-                          {tf}
-                      </button>
-                  ))}
-              </div>
-          </div>
+      {/* KPI GRID - "BIG NUMBERS" */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KpiCard 
+             label="Lucro Líquido (R$)" 
+             value={`R$ ${stats.profitBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+             subValue={`${stats.roi.toFixed(2)}% ROI`}
+             icon={<DollarSign size={20} />}
+             color={stats.profitBrl >= 0 ? activeNeon : 'red'}
+             neonColor={neonHex}
+          />
+          <KpiCard 
+             label="Média Diária (R$)" 
+             value={`R$ ${stats.dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+             subValue="Performance Real"
+             icon={<TrendingUp size={20} />}
+             color={activeNeon}
+             neonColor={neonHex}
+          />
+          <KpiCard 
+             label="Projeção (30 Dias)" 
+             value={`+ R$ ${stats.projectedProfitBrl.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+             subValue="Se mantiver a média"
+             icon={<Target size={20} />}
+             color="white"
+             neonColor={neonHex}
+          />
+          <KpiCard 
+             label="Win Rate (Dias)" 
+             value={`${winPercent.toFixed(0)}%`}
+             subValue={`${winRateData[0].value} Gains / ${winRateData[1].value} Loss`}
+             icon={<Zap size={20} />}
+             color={winPercent > 50 ? activeNeon : 'red'}
+             neonColor={neonHex}
+          />
+      </div>
 
-          <div className="h-[400px] w-full relative z-10">
-            {chartData.length > 0 ? (
+      {/* MAIN CHART: CURVA DE EQUITY */}
+      <Card className="p-6 bg-[#000] border-white/20" title="CURVA DE PATRIMÔNIO (CENTS BRL)">
+          <div className="h-[350px] w-full">
+            {evolutionData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <AreaChart data={evolutionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
-                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={neonHex} stopOpacity={0.8}/>
+                            <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={neonHex} stopOpacity={0.3}/>
                                 <stop offset="95%" stopColor={neonHex} stopOpacity={0}/>
                             </linearGradient>
-                            <filter id="neonGlow" height="200%">
-                                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
-                                <feOffset in="blur" dx="0" dy="0" result="offsetBlur"/>
-                                <feFlood floodColor={neonHex} floodOpacity="0.6" result="offsetColor"/>
-                                <feComposite in="offsetColor" in2="offsetBlur" operator="in" result="offsetBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="offsetBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
                         <XAxis 
                             dataKey="date" 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{ fill: '#000', fontSize: 10, fontFamily: 'Space Mono' }}
+                            tick={{ fill: '#666', fontSize: 10, fontFamily: 'Space Mono' }}
                             dy={10}
                         />
                         <YAxis 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{ fill: '#000', fontSize: 10, fontFamily: 'Space Mono' }}
-                            tickFormatter={(val) => `R$${val}`}
+                            tick={{ fill: '#666', fontSize: 10, fontFamily: 'Space Mono' }}
+                            tickFormatter={(val) => `R$${val/1000}k`}
                         />
                         <Tooltip 
                             contentStyle={{ 
                                 backgroundColor: '#000', 
-                                border: `2px solid ${neonHex}`, 
-                                borderRadius: 0,
-                                boxShadow: `4px 4px 0px 0px ${neonHex}`
+                                border: `1px solid ${neonHex}`, 
+                                borderRadius: 0
                             }}
                             itemStyle={{ color: '#fff', fontFamily: 'Space Mono' }}
                             labelStyle={{ color: neonHex, fontWeight: 'bold', marginBottom: '0.5rem' }}
+                            formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Cents BRL']}
                         />
-                        <ReferenceLine x={new Date(state.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} stroke="black" strokeDasharray="3 3" label="START" />
                         <Area 
                             type="monotone" 
-                            dataKey="value" 
+                            dataKey="centsBrl" 
                             stroke={neonHex} 
                             strokeWidth={3}
                             fillOpacity={1} 
-                            fill="url(#colorValue)" 
-                            filter="url(#neonGlow)"
+                            fill="url(#colorGradient)" 
                             animationDuration={1500}
                         />
                     </AreaChart>
                 </ResponsiveContainer>
             ) : (
-                <div className="h-full flex flex-col items-center justify-center text-neutral-400 border-2 border-dashed border-neutral-300 bg-neutral-50">
-                    <MousePointer2 size={48} className="mb-4 text-neutral-300" />
-                    <p className="font-bold uppercase tracking-widest">Aguardando dados...</p>
-                    <p className="text-xs mt-2">Registre dias na aba Progresso para visualizar.</p>
-                </div>
+                <EmptyState message="Sem dados suficientes no histórico." />
             )}
           </div>
-      </div>
+      </Card>
 
-      {/* SECONDARY CHARTS GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* SECONDARY GRIDS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* 1. ROADMAP GAUGE (PREMIUM) */}
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-6 flex flex-col items-center justify-between">
-              <div className="w-full flex items-center justify-between border-b-2 border-black pb-2 mb-4">
-                  <h3 className="text-lg font-black uppercase">Meta Roadmap</h3>
-                  <Target size={20} style={{ color: neonHex }} />
-              </div>
-              
-              <div className="relative w-full h-[250px] flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                            data={gaugeData}
-                            cx="50%"
-                            cy="80%" // Moved down to create half-circle effect
-                            startAngle={180}
-                            endAngle={0}
-                            innerRadius="70%"
-                            outerRadius="100%"
-                            paddingAngle={2}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                            <Cell key="progress" fill={neonHex} />
-                            <Cell key="remaining" fill="#f3f3f3" />
-                        </Pie>
-                      </PieChart>
-                  </ResponsiveContainer>
-                  
-                  {/* Custom Gauge Content */}
-                  <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center text-center">
-                      <span className="text-6xl font-black leading-none tracking-tighter" style={{ color: neonHex }}>
-                          {progressPercent.toFixed(1)}%
-                      </span>
-                      <div className="flex items-center gap-2 mt-2 bg-black text-white px-3 py-1 font-mono text-sm font-bold uppercase">
-                          <span>R$ {totalDeposited.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
-                          <span className="text-neutral-500">/</span>
-                          <span>{roadmapGoal / 1000}k</span>
-                      </div>
-                  </div>
-
-                  {/* Labels */}
-                  <div className="absolute bottom-10 left-4 text-xs font-bold font-mono text-neutral-400">0%</div>
-                  <div className="absolute bottom-10 right-4 text-xs font-bold font-mono text-neutral-400">100%</div>
-              </div>
-          </div>
-
-          {/* 2. PARTNER SHARE */}
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000000] p-6">
-              <h3 className="w-full text-left text-lg font-black uppercase border-b-2 border-black pb-2 mb-4">Contribuição Sócios</h3>
+          {/* MONTHLY PERFORMANCE */}
+          <Card className="lg:col-span-2 p-6 bg-[#000] border-white/20" title="PERFORMANCE MENSAL">
               <div className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={partnerData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <XAxis type="number" hide />
-                          <YAxis 
-                            dataKey="name" 
-                            type="category" 
-                            width={80} 
-                            tick={{ fill: '#000', fontWeight: 'bold', fontSize: 10, fontFamily: 'Space Mono' }} 
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip 
-                            cursor={{fill: 'transparent'}}
-                            contentStyle={{ backgroundColor: '#000', border: 'none', color: '#fff' }} 
-                            itemStyle={{ color: neonHex }}
-                          />
-                          <Bar dataKey="value" fill={neonHex} barSize={30} radius={[0, 0, 0, 0]}>
-                            {partnerData.map((entry, index) => (
-                                <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={index === 0 ? neonHex : index === 1 ? '#000' : '#888'} 
-                                    stroke="black"
-                                    strokeWidth={2}
-                                />
-                            ))}
-                          </Bar>
-                      </BarChart>
-                  </ResponsiveContainer>
+                {monthlyData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthlyData}>
+                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
+                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 10, fontFamily: 'Space Mono' }} />
+                             <Tooltip 
+                                cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                                contentStyle={{ backgroundColor: '#000', border: '1px solid white', color: '#fff' }} 
+                                formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Lucro']}
+                             />
+                             <Bar dataKey="value" radius={[2, 2, 0, 0]}>
+                                {monthlyData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.value >= 0 ? neonHex : '#ff4444'} />
+                                ))}
+                             </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <EmptyState message="Registre mais meses para ver a análise." />
+                )}
               </div>
-          </div>
+          </Card>
+
+          {/* CONSISTENCY (WIN RATE) */}
+          <Card className="p-6 bg-[#000] border-white/20" title="CONSISTÊNCIA">
+               <div className="h-[250px] w-full relative flex items-center justify-center">
+                    {winRateData.some(d => d.value > 0) ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={winRateData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    <Cell fill={neonHex} />
+                                    <Cell fill="#ff4444" />
+                                </Pie>
+                                <Tooltip 
+                                   contentStyle={{ backgroundColor: '#000', border: '1px solid white' }}
+                                   itemStyle={{ color: 'white' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyState message="Sem dados." />
+                    )}
+                    
+                    {/* Center Text */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-3xl font-black text-white">{winPercent.toFixed(0)}%</span>
+                        <span className="text-[9px] uppercase tracking-widest text-neutral-500">Win Rate</span>
+                    </div>
+               </div>
+               <div className="grid grid-cols-2 gap-2 mt-4">
+                   <div className="text-center p-2 bg-[#111] border border-white/10">
+                       <span className="block text-[10px] text-neutral-500 uppercase">Dias Positivos</span>
+                       <span className="font-bold text-white" style={{ color: neonHex }}>{winRateData[0].value}</span>
+                   </div>
+                   <div className="text-center p-2 bg-[#111] border border-white/10">
+                       <span className="block text-[10px] text-neutral-500 uppercase">Dias Negativos</span>
+                       <span className="font-bold text-[#ff4444]">{winRateData[1].value}</span>
+                   </div>
+               </div>
+          </Card>
+
       </div>
+
     </div>
   );
 };
+
+// --- SUB-COMPONENTS ---
+
+const KpiCard = ({ label, value, subValue, icon, color, neonColor }: any) => {
+    const isNeon = color === neonColor;
+    return (
+        <div 
+            className="p-6 bg-[#000] border-2 border-white/20 relative group hover:border-white transition-colors"
+            style={{ borderColor: isNeon ? neonColor : '' }}
+        >
+            <div className="flex justify-between items-start mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-white">{label}</span>
+                <div style={{ color: isNeon ? neonColor : 'white' }}>{icon}</div>
+            </div>
+            <div 
+                className="text-2xl lg:text-3xl font-black tracking-tight mb-1 font-sans"
+                style={{ color: isNeon ? neonColor : color === 'red' ? '#ff4444' : 'white' }}
+            >
+                {value}
+            </div>
+            <div className="text-xs font-mono font-bold text-neutral-500 border-l-2 border-neutral-800 pl-2">
+                {subValue}
+            </div>
+            
+            {/* Hover Glow Effect */}
+            <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-5 pointer-events-none transition-opacity"
+                style={{ backgroundColor: neonColor }}
+            ></div>
+        </div>
+    );
+};
+
+const EmptyState = ({ message }: { message: string }) => (
+    <div className="h-full flex flex-col items-center justify-center text-neutral-600 border-2 border-dashed border-white/10 bg-[#050505]">
+        <Calendar size={32} className="mb-2 opacity-50" />
+        <p className="text-xs font-bold uppercase tracking-widest">{message}</p>
+    </div>
+);
