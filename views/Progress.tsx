@@ -52,11 +52,10 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
     setCopyStatus('copying');
     
     try {
-        // Gera o blob da imagem
         const blob = await toBlob(ref.current, {
             backgroundColor: '#050505',
             quality: 1,
-            pixelRatio: 2 // Alta resolução para WhatsApp
+            pixelRatio: 2 
         });
 
         if (blob) {
@@ -137,7 +136,6 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   return (
     <div className="flex flex-col gap-6 max-w-full font-mono pb-12">
        
-       {/* BARRA DE RELATÓRIOS (NOVA) */}
        <div className="flex flex-wrap gap-4 items-center justify-between border-b-2 border-white/10 pb-4">
            <div className="flex items-center gap-2">
                <div className="w-3 h-3 bg-[#00e676]"></div>
@@ -171,7 +169,6 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            </div>
        </div>
 
-       {/* ÁREA DE CAPTURA DO RELATÓRIO COMPLETO */}
        <div ref={fullReportRef} className="flex flex-col gap-6 bg-[#050505] p-2">
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                <Card className="lg:col-span-10 p-6" color="success">
@@ -225,18 +222,17 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            </div>
 
            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <StatsCard label="Dias (Snapshots)" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
-                <StatsCard label="Variação Total" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={16} />} />
-                <StatsCard label="% por Registro (Avg)" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={16} />} />
-                <StatsCard label="Lucro (USD)" value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} compact />
-                <StatsCard label="Lucro (BRL)" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color={standardBrl >= 0 ? 'success' : 'danger'} compact />
-                <StatsCard label="Cents (USD)" value={`${Math.floor(profitCentsRaw).toLocaleString('pt-BR')}`} subValue="c" color="success" />
-                <StatsCard label="Cents (BRL)" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="success" />
-                <StatsCard label="Média p/ Registro (BRL)" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="purple" />
+                <StatsCard label="Dias de Operação" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
+                <StatsCard label="Aumento de Patrimônio" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={16} />} />
+                <StatsCard label="% Diária" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={16} />} />
+                <StatsCard label="Lucro em USD" value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} compact />
+                <StatsCard label="Lucro em BRL Standard" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color={standardBrl >= 0 ? 'success' : 'danger'} compact />
+                <StatsCard label="Cents Totais" value={`${profitCentsRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} subValue="c" color="success" />
+                <StatsCard label="Cents Convertidos em BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="success" />
+                <StatsCard label="Média Diária" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="purple" />
            </div>
        </div>
 
-       {/* ACORDEON: EVOLUÇÃO DIÁRIA (COM REF DE CAPTURA) */}
        <div ref={snapshotRef} className="border-2 border-[#00e676] bg-[#000] shadow-[4px_4px_0px_0px_#00e676]">
            <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-4 bg-[#111] hover:bg-[#00e676]/5 transition-colors group">
                <div className="flex items-center gap-2">
@@ -277,12 +273,12 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                            </div>
                                        </td>
                                        <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">{record.rate.toFixed(2)}</td>
-                                       <td className="py-3 px-6 text-right font-black border-r border-white/5 group-hover:border-black/10">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>
+                                       <td className="py-3 px-6 text-right font-black border-r border-white/5 group-hover:border-black/10">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                        <td className={`py-3 px-6 text-right font-black group-hover:text-black ${dayResult >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
                                             {isFirstRecord ? (
-                                                <div className="flex items-center justify-end gap-2 opacity-80"><Flag size={12} fill="currentColor" /><span className="text-xs font-black uppercase tracking-wider">START</span><span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span></div>
+                                                <div className="flex items-center justify-end gap-2 opacity-80"><Flag size={12} fill="currentColor" /><span className="text-xs font-black uppercase tracking-wider">START</span><span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                                             ) : (
-                                                <>{dayResult > 0 ? '+' : ''}{dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</>
+                                                <>{dayResult > 0 ? '+' : ''}{dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                                             )}
                                        </td>
                                        <td className="py-3 px-4 text-center">
