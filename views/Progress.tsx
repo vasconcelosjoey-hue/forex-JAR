@@ -14,9 +14,8 @@ interface ProgressProps {
 export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
-  // Alteração solicitada: Dias baseados na quantidade de registros
   const daysElapsed = state.dailyHistory?.length || 0;
-  const mathDays = daysElapsed || 1; // Fallback para evitar divisão por zero nos cálculos
+  const mathDays = daysElapsed || 1; 
 
   const totalGrowthUsd = state.currentBalanceUsd - state.startDepositUsd;
   const growthPercentage = state.startDepositUsd > 0 
@@ -124,7 +123,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                     />
                     
                     <div className="lg:col-span-2 grid grid-cols-2 gap-4 relative">
-                        <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-neutral-600 hidden md:block">
+                        <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-neutral-400 hidden md:block">
                             <ArrowRight size={16} />
                         </div>
 
@@ -153,7 +152,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                 <button 
                                     onClick={handleAddToStartDeposit}
                                     title="Adicionar ao Capital e Saldo"
-                                    className="bg-[#111] hover:bg-[#00e676] hover:text-black border-l-2 border-[#00e676]/50 text-neutral-400 h-full px-4 transition-colors flex items-center justify-center rounded-none"
+                                    className="bg-[#111] hover:bg-[#00e676] hover:text-black border-l-2 border-[#00e676]/50 text-neutral-200 h-full px-4 transition-colors flex items-center justify-center rounded-none"
                                 >
                                     <Plus size={16} />
                                 </button>
@@ -193,7 +192,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
        <div className="relative border-4 border-white bg-black p-8 flex flex-col justify-center shadow-[8px_8px_0px_0px_#00e676]">
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                 <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-4 md:pb-0 md:pr-8 w-full md:w-auto">
-                     <div className="text-[10px] uppercase font-bold text-neutral-500 tracking-[0.2em] mb-2 flex items-center justify-center md:justify-start gap-2">
+                     <div className="text-[10px] uppercase font-black text-white/90 tracking-[0.2em] mb-2 flex items-center justify-center md:justify-start gap-2">
                         <Target size={14} className="text-[#00e676]" />
                         Target: 1M
                      </div>
@@ -209,11 +208,11 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                             {goalProgress.toFixed(1)}%
                         </span>
                         {!isGoalReached ? (
-                             <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider bg-white/10 px-2 py-1">
-                                Missing <span className="text-white">$ {remaining.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                             <span className="text-xs font-black text-white uppercase tracking-wider bg-white/10 px-2 py-1">
+                                Missing <span className="text-[#00e676]">$ {remaining.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                              </span>
                         ) : (
-                            <span className="text-xs font-bold bg-[#ffd700] text-black px-2 py-1 uppercase">GOAL REACHED</span>
+                            <span className="text-xs font-black bg-[#ffd700] text-black px-2 py-1 uppercase">GOAL REACHED</span>
                         )}
                     </div>
                     <div className="h-6 bg-[#111] border-2 border-white relative">
@@ -242,13 +241,13 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
             />
             <StatsCard 
                 label="Lucro (USD)" 
-                value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 0 })}`} 
+                value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} 
                 color={standardUsd >= 0 ? 'success' : 'danger'}
                 compact
             />
             <StatsCard 
                 label="Lucro (BRL)" 
-                value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} 
+                value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
                 color={standardBrl >= 0 ? 'success' : 'danger'}
                 compact
             />
@@ -260,19 +259,17 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
             />
             <StatsCard 
                 label="Cents (BRL)" 
-                value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} 
                 color="success"
             />
             <StatsCard 
                 label="Média p/ Registro (BRL)" 
-                value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} 
                 color="purple"
             />
        </div>
 
-       {/* ACORDEON: EVOLUÇÃO DIÁRIA */}
        <div className="border-2 border-[#00e676] bg-[#000] shadow-[4px_4px_0px_0px_#00e676]">
-           {/* Acordeon Header */}
            <button 
                 onClick={() => setIsHistoryOpen(!isHistoryOpen)}
                 className="w-full flex items-center justify-between px-6 py-4 bg-[#111] hover:bg-[#00e676]/5 transition-colors group"
@@ -282,7 +279,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                    <h3 className="text-xs font-black text-[#00e676] uppercase tracking-widest">
                        EVOLUÇÃO DIÁRIA (SNAPSHOTS)
                    </h3>
-                   <span className="ml-4 text-[10px] text-neutral-600 font-bold uppercase">
+                   <span className="ml-4 text-[10px] text-white font-black uppercase">
                        {state.dailyHistory?.length || 0} DIAS REGISTRADOS
                    </span>
                </div>
@@ -291,11 +288,10 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                </div>
            </button>
 
-           {/* Acordeon Content */}
            {isHistoryOpen && (
                <div className="overflow-x-auto border-t-2 border-[#00e676]/20 animate-in slide-in-from-top-2 duration-200">
                    <table className="w-full text-left border-collapse">
-                       <thead className="bg-[#050505] text-[10px] uppercase text-neutral-500 font-bold border-b-2 border-white/10">
+                       <thead className="bg-[#050505] text-[10px] uppercase text-white font-black border-b-2 border-white/10">
                            <tr>
                                <th className="py-3 px-6 whitespace-nowrap">Data</th>
                                <th className="py-3 px-6 whitespace-nowrap">Saldo (USD)</th>
@@ -305,7 +301,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                <th className="py-3 px-4 text-center w-10">...</th>
                            </tr>
                        </thead>
-                       <tbody className="text-sm font-mono text-neutral-300">
+                       <tbody className="text-sm font-mono text-white font-bold">
                            {(state.dailyHistory || []).map((record, index, arr) => {
                                const prevRecord = arr[index + 1];
                                const isFirstRecord = index === arr.length - 1;
@@ -338,21 +334,21 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                            </div>
                                        </td>
                                        <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">
-                                           {record.rate.toFixed(4)}
+                                           {record.rate.toFixed(2)}
                                        </td>
-                                       <td className="py-3 px-6 text-right font-bold border-r border-white/5 group-hover:border-black/10">
-                                           R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                       <td className="py-3 px-6 text-right font-black border-r border-white/5 group-hover:border-black/10">
+                                           R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
                                        </td>
                                        <td className={`py-3 px-6 text-right font-black group-hover:text-black ${dayResult >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
                                             {isFirstRecord ? (
                                                 <div className="flex items-center justify-end gap-2 opacity-80">
                                                     <Flag size={12} fill="currentColor" />
-                                                    <span className="text-xs font-bold uppercase tracking-wider">START</span>
-                                                    <span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                    <span className="text-xs font-black uppercase tracking-wider">START</span>
+                                                    <span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    {dayResult > 0 ? '+' : ''}{dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    {dayResult > 0 ? '+' : ''}{dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
                                                 </>
                                             )}
                                        </td>
@@ -372,13 +368,6 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                    </tr>
                                );
                            })}
-                           {(state.dailyHistory || []).length === 0 && (
-                               <tr>
-                                   <td colSpan={6} className="py-8 text-center text-neutral-600 text-xs uppercase">
-                                       Nenhum dia registrado. Clique em "REGISTRAR" acima.
-                                   </td>
-                               </tr>
-                           )}
                        </tbody>
                    </table>
                </div>
@@ -399,12 +388,12 @@ const StatsCard = ({ label, value, subValue, icon, color = 'default', className 
 
     return (
         <Card className={`flex flex-col justify-center p-6 ${className}`}>
-            <div className="flex items-center justify-between mb-2 opacity-60">
-                <span className="text-[10px] uppercase font-bold tracking-widest">{label}</span>
-                {icon}
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-black tracking-widest text-white/90">{label}</span>
+                <div className="text-white/40">{icon}</div>
             </div>
             <div className={`${compact ? 'text-2xl' : 'text-3xl'} font-black ${colors[color]} leading-none tracking-tight font-sans`}>
-                {value} <span className="text-sm opacity-70 font-bold font-mono text-white">{subValue}</span>
+                {value} <span className="text-sm opacity-70 font-black font-mono text-white">{subValue}</span>
             </div>
         </Card>
     );
