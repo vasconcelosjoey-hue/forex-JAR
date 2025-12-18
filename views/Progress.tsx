@@ -14,18 +14,16 @@ interface ProgressProps {
 export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
-  // Calculations
-  const start = new Date(state.startDate);
-  const current = new Date(state.currentDate);
-  const diffTime = Math.abs(current.getTime() - start.getTime());
-  const daysElapsed = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1; 
+  // Alteração solicitada: Dias baseados na quantidade de registros
+  const daysElapsed = state.dailyHistory?.length || 0;
+  const mathDays = daysElapsed || 1; // Fallback para evitar divisão por zero nos cálculos
 
   const totalGrowthUsd = state.currentBalanceUsd - state.startDepositUsd;
   const growthPercentage = state.startDepositUsd > 0 
     ? (totalGrowthUsd / state.startDepositUsd) * 100 
     : 0;
   
-  const dailyYieldPercent = daysElapsed > 0 ? growthPercentage / daysElapsed : 0;
+  const dailyYieldPercent = growthPercentage / mathDays;
   
   const standardUsd = totalGrowthUsd;
   const standardBrl = standardUsd * state.dollarRate;
@@ -39,7 +37,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   const currentCentsBrl = calculateCentsBrl(state.currentBalanceUsd, state.dollarRate);
   const profitCentsRaw = totalGrowthUsd; 
 
-  const dailyAvgBrl = currentCentsBrl / daysElapsed;
+  const dailyAvgBrl = currentCentsBrl / mathDays;
 
   const goal = 1000000;
   const goalProgress = Math.min((state.currentBalanceUsd / goal) * 100, 100);
@@ -97,7 +95,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
 
       newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       updateState({ dailyHistory: newHistory });
-      setIsHistoryOpen(true); // Abre o acordeon ao registrar
+      setIsHistoryOpen(true);
   };
 
   const deleteRecord = (dateToDelete: string) => {
@@ -229,7 +227,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
        </div>
 
        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <StatsCard label="Dias" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
+            <StatsCard label="Dias (Snapshots)" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
             <StatsCard 
                 label="Variação Total" 
                 value={`${growthPercentage.toFixed(2)}%`} 
@@ -237,7 +235,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                 icon={<ArrowUpRight size={16} />}
             />
             <StatsCard 
-                label="% Diário (Avg)" 
+                label="% por Registro (Avg)" 
                 value={`${dailyYieldPercent.toFixed(2)}%`}
                 color="gold"
                 icon={<Percent size={16} />}
@@ -266,7 +264,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                 color="success"
             />
             <StatsCard 
-                label="Média Diária (BRL)" 
+                label="Média p/ Registro (BRL)" 
                 value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
                 color="purple"
             />
@@ -284,8 +282,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                    <h3 className="text-xs font-black text-[#00e676] uppercase tracking-widest">
                        EVOLUÇÃO DIÁRIA (SNAPSHOTS)
                    </h3>
-                   <span className="ml-4 text-[10px] text-neutral-600 font-bold">
-                       {state.dailyHistory?.length || 0} REGISTROS
+                   <span className="ml-4 text-[10px] text-neutral-600 font-bold uppercase">
+                       {state.dailyHistory?.length || 0} DIAS REGISTRADOS
                    </span>
                </div>
                <div className="text-[#00e676] group-hover:scale-125 transition-transform">
