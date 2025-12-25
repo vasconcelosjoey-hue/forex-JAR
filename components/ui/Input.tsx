@@ -1,5 +1,5 @@
 
-import React, { border } from 'react';
+import React from 'react';
 import { formatCurrencyInput, formatCurrencyDisplay } from '../../utils/format';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
