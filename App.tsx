@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { Roadmap } from './views/Roadmap';
@@ -12,7 +13,7 @@ import { db, initError, saveDashboardState, subscribeToDashboardState } from './
 const STORAGE_KEY = 'JAR_DASHBOARD_V6_REALTIME';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.ROADMAP);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.PROGRESSO);
   
   // 1. Inicializa Estado
   const [appState, setAppState] = useState<AppState>(() => {

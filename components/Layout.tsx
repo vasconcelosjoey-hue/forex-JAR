@@ -59,8 +59,8 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   const navItems = [
-    { id: Tab.ROADMAP, label: 'Roadmap', icon: <LayoutDashboard size={16} /> },
     { id: Tab.PROGRESSO, label: 'Progresso', icon: <TrendingUp size={16} /> },
+    { id: Tab.ROADMAP, label: 'Roadmap', icon: <LayoutDashboard size={16} /> },
     { id: Tab.SAQUES, label: 'Saques', icon: <ArrowDownCircle size={16} /> },
     { id: Tab.DASHBOARD, label: 'Dashboard', icon: <PieChart size={16} /> },
   ];

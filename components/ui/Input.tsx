@@ -1,11 +1,12 @@
-import React from 'react';
+
+import React, { border } from 'react';
 import { formatCurrencyInput, formatCurrencyDisplay } from '../../utils/format';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   suffix?: string;
   prefix?: string;
-  actionButton?: React.ReactNode;
+  actionButton?: React.RefObject<HTMLButtonElement> | React.ReactNode;
   variant?: 'default' | 'danger' | 'success' | 'warning';
   mask?: 'currency';
   decimals?: number;
@@ -71,7 +72,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      {label && <label className="text-[10px] uppercase font-bold text-neutral-400 mb-1 ml-0 font-mono tracking-tighter">{label}</label>}
+      {label && <label className="text-xs uppercase font-black text-white mb-2 ml-0 font-mono tracking-widest">{label}</label>}
       <div className="relative flex items-center group">
         {prefix && <span className="absolute left-3 text-neutral-500 font-bold text-sm font-mono">{prefix}</span>}
         <input
@@ -91,7 +92,7 @@ export const Input: React.FC<InputProps> = ({
         {suffix && !actionButton && <span className="absolute right-3 text-neutral-600 text-xs font-bold font-mono">{suffix}</span>}
         {actionButton && (
           <div className="absolute right-1 top-1 bottom-1">
-            {actionButton}
+            {actionButton as React.ReactNode}
           </div>
         )}
       </div>
