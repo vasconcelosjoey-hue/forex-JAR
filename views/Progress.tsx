@@ -138,8 +138,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
        
        <div className="flex flex-wrap gap-4 items-center justify-between border-b-2 border-white/10 pb-4">
            <div className="flex items-center gap-2">
-               <div className="w-4 h-4 bg-[#00e676]"></div>
-               <h2 className="text-lg font-black text-white uppercase tracking-widest">Painel de Progresso</h2>
+               <div className="w-5 h-5 bg-[#00e676]"></div>
+               <h2 className="text-xl font-black text-white uppercase tracking-widest">Painel de Progresso</h2>
            </div>
            
            <div className="flex gap-2">
@@ -175,7 +175,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                         <Input label="Data Início" type="date" variant="success" value={state.startDate} onChange={(e) => updateState({ startDate: e.target.value })} className="w-full" />
                         <div className="lg:col-span-2 grid grid-cols-2 gap-4 relative">
-                            <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-white/40 hidden md:block"><ArrowRight size={16} /></div>
+                            <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-white hidden md:block"><ArrowRight size={16} /></div>
                             <Input label="Total Aportado (USD)" mask="currency" prefix="$" variant="success" value={state.startDepositUsd} onChange={(e) => updateState({ startDepositUsd: parseCurrency(e.target.value) })} />
                             <Input label="Novo Aporte (+)" mask="currency" prefix="$" placeholder="0,00" variant="success" value={state.drafts.progress?.additionalDeposit || ''} onChange={(e) => updateState({ drafts: { ...state.drafts, progress: { ...state.drafts.progress, additionalDeposit: e.target.value } } })} actionButton={
                                     <button onClick={handleAddToStartDeposit} title="Adicionar ao Capital e Saldo" className="bg-[#111] hover:bg-[#00e676] hover:text-black border-l-2 border-[#00e676]/50 text-neutral-200 h-full px-4 transition-colors flex items-center justify-center rounded-none"><Plus size={16} /></button>
@@ -193,28 +193,28 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                </button>
            </div>
 
-           <div className="relative border-4 border-white bg-black p-8 flex flex-col justify-center shadow-[8px_8px_0px_0px_#00e676]">
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                    <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-4 md:pb-0 md:pr-8 w-full md:w-auto">
-                         <div className="text-xs uppercase font-black text-white tracking-[0.2em] mb-2 flex items-center justify-center md:justify-start gap-2">
-                            <Target size={14} className="text-[#00e676]" />
-                            Target: 1M
+           <div className="relative border-4 border-white bg-black p-10 flex flex-col justify-center shadow-[12px_12px_0px_0px_#00e676]">
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-6 md:pb-0 md:pr-12 w-full md:w-auto">
+                         <div className="text-base uppercase font-black text-white tracking-[0.2em] mb-4 flex items-center justify-center md:justify-start gap-3">
+                            <Target size={20} className="text-[#00e676]" />
+                            OBJETIVO FINAL: 1 MILHÃO
                          </div>
-                         <div className="text-4xl md:text-6xl font-black text-white tracking-tighter font-sans">
-                            <span className="text-[#00e676] text-3xl align-top mr-2 font-mono">$</span>
+                         <div className="text-5xl md:text-7xl font-black text-white tracking-tighter font-sans">
+                            <span className="text-[#00e676] text-4xl align-top mr-3 font-mono">$</span>
                             {state.currentBalanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                          </div>
                     </div>
                     <div className="flex-1 w-full">
-                        <div className="flex justify-between items-end mb-3">
-                            <span className={`text-4xl font-black text-[#00e676] font-sans`}>{goalProgress.toFixed(1)}%</span>
+                        <div className="flex justify-between items-end mb-4">
+                            <span className={`text-6xl font-black text-[#00e676] font-sans`}>{goalProgress.toFixed(1)}%</span>
                             {!isGoalReached ? (
-                                 <span className="text-xs font-black text-white uppercase tracking-wider bg-white/10 px-2 py-1">Missing <span className="text-[#00e676]">$ {remaining.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></span>
+                                 <span className="text-sm font-black text-white uppercase tracking-wider bg-white/10 px-3 py-1.5">OBJETIVO RESTANTE <span className="text-[#00e676] ml-2">$ {remaining.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></span>
                             ) : (
-                                <span className="text-xs font-black bg-[#ffd700] text-black px-2 py-1 uppercase">GOAL REACHED</span>
+                                <span className="text-sm font-black bg-[#ffd700] text-black px-3 py-1.5 uppercase">OBJETIVO ALCANÇADO</span>
                             )}
                         </div>
-                        <div className="h-6 bg-[#111] border-2 border-white relative">
+                        <div className="h-8 bg-[#111] border-2 border-white relative">
                             <div className="h-full bg-[#00e676] border-r-2 border-black" style={{ width: `${goalProgress}%` }}></div>
                         </div>
                     </div>
@@ -222,9 +222,9 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            </div>
 
            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <StatsCard label="Dias de Operação" value={daysElapsed.toString()} icon={<Calendar size={16} />} color="success" />
-                <StatsCard label="Aumento de Patrimônio" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={16} />} />
-                <StatsCard label="% Diária" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={16} />} />
+                <StatsCard label="Dias de Operação" value={daysElapsed.toString()} icon={<Calendar size={18} />} color="success" />
+                <StatsCard label="Aumento de Patrimônio" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={18} />} />
+                <StatsCard label="% Diária" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={18} />} />
                 <StatsCard label="Lucro em USD" value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} compact />
                 <StatsCard label="Lucro em BRL Standard" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color={standardBrl >= 0 ? 'success' : 'danger'} compact />
                 <StatsCard label="Cents Totais" value={`${profitCentsRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} subValue="c" color="success" />
@@ -233,27 +233,27 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            </div>
        </div>
 
-       <div ref={snapshotRef} className="border-2 border-[#00e676] bg-[#000] shadow-[4px_4px_0px_0px_#00e676]">
-           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-4 bg-[#111] hover:bg-[#00e676]/5 transition-colors group">
-               <div className="flex items-center gap-2">
-                   <div className="w-3 h-3 bg-[#00e676]"></div>
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA (SNAPSHOTS)</h3>
-                   <span className="ml-4 text-[10px] text-white font-black uppercase tracking-tighter">{state.dailyHistory?.length || 0} DIAS REGISTRADOS</span>
+       <div ref={snapshotRef} className="border-2 border-[#00e676] bg-[#000] shadow-[6px_6px_0px_0px_#00e676]">
+           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-5 bg-[#111] hover:bg-[#00e676]/5 transition-colors group">
+               <div className="flex items-center gap-3">
+                   <div className="w-4 h-4 bg-[#00e676]"></div>
+                   <h3 className="text-base font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA (SNAPSHOTS)</h3>
+                   <span className="ml-6 text-xs text-white font-black uppercase tracking-tighter bg-white/10 px-2 py-0.5">{state.dailyHistory?.length || 0} DIAS REGISTRADOS</span>
                </div>
-               <div className="text-[#00e676] group-hover:scale-125 transition-transform">{isHistoryOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</div>
+               <div className="text-[#00e676] group-hover:scale-125 transition-transform">{isHistoryOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}</div>
            </button>
 
            {isHistoryOpen && (
                <div className="overflow-x-auto border-t-2 border-[#00e676]/20 animate-in slide-in-from-top-2 duration-200">
                    <table className="w-full text-left border-collapse">
-                       <thead className="bg-[#050505] text-xs uppercase text-white font-black border-b-2 border-white/10">
+                       <thead className="bg-[#050505] text-sm uppercase text-white font-black border-b-2 border-white/10">
                            <tr>
-                               <th className="py-4 px-6 whitespace-nowrap">Data</th>
-                               <th className="py-4 px-6 whitespace-nowrap">Saldo (USD)</th>
-                               <th className="py-4 px-6 whitespace-nowrap">Rate</th>
-                               <th className="py-4 px-6 whitespace-nowrap text-right text-[#00e676]">Score (Cents BRL)</th>
-                               <th className="py-4 px-6 whitespace-nowrap text-right">Resultado Dia</th>
-                               <th className="py-4 px-4 text-center w-10">...</th>
+                               <th className="py-5 px-6 whitespace-nowrap">Data</th>
+                               <th className="py-5 px-6 whitespace-nowrap">Saldo (USD)</th>
+                               <th className="py-5 px-6 whitespace-nowrap">Rate</th>
+                               <th className="py-5 px-6 whitespace-nowrap text-right text-[#00e676]">Score (Cents BRL)</th>
+                               <th className="py-5 px-6 whitespace-nowrap text-right">Resultado Dia</th>
+                               <th className="py-5 px-4 text-center w-10">...</th>
                            </tr>
                        </thead>
                        <tbody className="text-sm font-mono text-white font-bold">
@@ -265,24 +265,24 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
 
                                return (
                                    <tr key={record.date} className="border-b border-white/5 hover:bg-[#00e676] hover:text-black transition-colors group">
-                                       <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">{formatDateDisplay(record.date)}</td>
-                                       <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">
+                                       <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">{formatDateDisplay(record.date)}</td>
+                                       <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">
                                            <div className="flex flex-col">
                                                <span>$ {record.balanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                               {depositDiff > 1 && <span className="text-[9px] font-black text-cyan-400 group-hover:text-black flex items-center gap-1 mt-1 bg-cyan-400/10 group-hover:bg-black/10 px-1 w-fit"><Wallet size={10} />CAPITAL +{depositDiff.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>}
+                                               {depositDiff > 1 && <span className="text-[10px] font-black text-cyan-400 group-hover:text-black flex items-center gap-1 mt-1 bg-cyan-400/10 group-hover:bg-black/10 px-1 w-fit uppercase"><Wallet size={12} />CAPITAL +{depositDiff.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>}
                                            </div>
                                        </td>
-                                       <td className="py-3 px-6 border-r border-white/5 group-hover:border-black/10">{record.rate.toFixed(2)}</td>
-                                       <td className="py-3 px-6 text-right font-black border-r border-white/5 group-hover:border-black/10">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                       <td className={`py-3 px-6 text-right font-black group-hover:text-black ${dayResult >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
+                                       <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">{record.rate.toFixed(2)}</td>
+                                       <td className="py-4 px-6 text-right font-black border-r border-white/5 group-hover:border-black/10">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                       <td className={`py-4 px-6 text-right font-black group-hover:text-black ${dayResult >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
                                             {isFirstRecord ? (
-                                                <div className="flex items-center justify-end gap-2 opacity-80"><Flag size={12} fill="currentColor" /><span className="text-xs font-black uppercase tracking-wider">START</span><span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                                                <div className="flex items-center justify-end gap-2 opacity-90"><Flag size={14} fill="currentColor" /><span className="text-xs font-black uppercase tracking-wider">INÍCIO</span><span>R$ {dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                                             ) : (
                                                 <>{dayResult > 0 ? '+' : ''}{dayResult.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                                             )}
                                        </td>
-                                       <td className="py-3 px-4 text-center">
-                                           <button type="button" onClick={(e) => { e.stopPropagation(); deleteRecord(record.date); }} className="text-white/30 hover:text-white transition-colors p-2 hover:bg-[#ff4444] rounded-none z-10 relative cursor-pointer" title="Apagar"><Trash2 size={16} className="pointer-events-none" /></button>
+                                       <td className="py-4 px-4 text-center">
+                                           <button type="button" onClick={(e) => { e.stopPropagation(); deleteRecord(record.date); }} className="text-white/40 hover:text-white transition-colors p-2 hover:bg-[#ff4444] rounded-none z-10 relative cursor-pointer" title="Apagar"><Trash2 size={18} className="pointer-events-none" /></button>
                                        </td>
                                    </tr>
                                );
@@ -299,9 +299,9 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
 const StatsCard = ({ label, value, subValue, icon, color = 'default', className = '', compact = false }: any) => {
     const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]' };
     return (
-        <Card className={`flex flex-col justify-center p-6 ${className}`}>
-            <div className="flex items-center justify-between mb-2"><span className="text-xs uppercase font-black tracking-widest text-white">{label}</span><div className="text-white/20">{icon}</div></div>
-            <div className={`${compact ? 'text-2xl' : 'text-3xl'} font-black ${colors[color]} leading-none tracking-tight font-sans`}>{value} <span className="text-sm opacity-70 font-black font-mono text-white">{subValue}</span></div>
+        <Card className={`flex flex-col justify-center p-8 ${className}`}>
+            <div className="flex items-center justify-between mb-3"><span className="text-sm uppercase font-black tracking-widest text-white">{label}</span><div className="text-white">{icon}</div></div>
+            <div className={`${compact ? 'text-3xl' : 'text-4xl'} font-black ${colors[color]} leading-none tracking-tight font-sans`}>{value} <span className="text-sm opacity-80 font-black font-mono text-white">{subValue}</span></div>
         </Card>
     );
 };
