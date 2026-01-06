@@ -202,14 +202,14 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                          </div>
                          <div className="text-5xl md:text-7xl font-black text-white tracking-tighter font-sans">
                             <span className="text-[#00e676] text-4xl align-top mr-3 font-mono">$</span>
-                            {state.currentBalanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {state.currentBalanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                          </div>
                     </div>
                     <div className="flex-1 w-full">
                         <div className="flex justify-between items-end mb-4">
                             <span className={`text-6xl font-black text-[#00e676] font-sans`}>{goalProgress.toFixed(1)}%</span>
                             {!isGoalReached ? (
-                                 <span className="text-sm font-black text-white uppercase tracking-wider bg-white/10 px-3 py-1.5">OBJETIVO RESTANTE <span className="text-[#00e676] ml-2">$ {remaining.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></span>
+                                 <span className="text-sm font-black text-white uppercase tracking-wider bg-white/10 px-3 py-1.5">OBJETIVO RESTANTE <span className="text-[#00e676] ml-2">$ {remaining.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span></span>
                             ) : (
                                 <span className="text-sm font-black bg-[#ffd700] text-black px-3 py-1.5 uppercase">OBJETIVO ALCANÇADO</span>
                             )}
@@ -225,7 +225,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                 <StatsCard label="Dias de Operação" value={daysElapsed.toString()} icon={<Calendar size={18} />} color="success" />
                 <StatsCard label="Aumento de Patrimônio" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={18} />} />
                 <StatsCard label="% Diária" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={18} />} />
-                <StatsCard label="Lucro em USD" value={`$ ${standardUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} compact />
+                <StatsCard label="Lucro em USD" value={`$ ${standardUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} compact />
                 <StatsCard label="Lucro em BRL Standard" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color={standardBrl >= 0 ? 'success' : 'danger'} compact />
                 <StatsCard label="Cents Totais" value={`${profitCentsRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} subValue="c" color="success" />
                 <StatsCard label="Cents Convertidos em BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="success" />
@@ -268,8 +268,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                                        <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">{formatDateDisplay(record.date)}</td>
                                        <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">
                                            <div className="flex flex-col">
-                                               <span>$ {record.balanceUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                               {depositDiff > 1 && <span className="text-[10px] font-black text-cyan-400 group-hover:text-black flex items-center gap-1 mt-1 bg-cyan-400/10 group-hover:bg-black/10 px-1 w-fit uppercase"><Wallet size={12} />CAPITAL +{depositDiff.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>}
+                                               <span>$ {record.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                               {depositDiff > 1 && <span className="text-[10px] font-black text-cyan-400 group-hover:text-black flex items-center gap-1 mt-1 bg-cyan-400/10 group-hover:bg-black/10 px-1 w-fit uppercase"><Wallet size={12} />CAPITAL +{depositDiff.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>}
                                            </div>
                                        </td>
                                        <td className="py-4 px-6 border-r border-white/5 group-hover:border-black/10">{record.rate.toFixed(2)}</td>
