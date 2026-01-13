@@ -15,7 +15,6 @@ const STORAGE_KEY = 'JAR_DASHBOARD_V6_REALTIME';
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.PROGRESSO);
   
-  // 1. Inicializa Estado
   const [appState, setAppState] = useState<AppState>(() => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -36,7 +35,6 @@ const App: React.FC = () => {
 
   const isRemoteUpdate = useRef(false);
 
-  // Helper para garantir estrutura de dados válida vindo do servidor
   const sanitizeState = (remoteData: any): DashboardState => {
       const baseDrafts = INITIAL_STATE.drafts;
       const remoteDrafts = remoteData.drafts || {};
@@ -48,11 +46,11 @@ const App: React.FC = () => {
               roadmap: { ...baseDrafts.roadmap, ...(remoteDrafts.roadmap || {}) },
               withdrawals: { ...baseDrafts.withdrawals, ...(remoteDrafts.withdrawals || {}) },
               progress: { ...baseDrafts.progress, ...(remoteDrafts.progress || {}) },
+              progress_jm: { ...baseDrafts.progress_jm, ...(remoteDrafts.progress_jm || {}) },
           },
       };
   };
 
-  // 2. SUBSCRIPTION (Realtime Listener)
   useEffect(() => {
     setIsLoaded(true);
 
@@ -61,13 +59,9 @@ const App: React.FC = () => {
         return;
     }
     
-    console.log("Iniciando subscrição em tempo real...");
-    
-    // Usa a função do service conforme solicitado
     const unsubscribe = subscribeToDashboardState((newState) => {
         const sanitized = sanitizeState(newState);
         
-        // Verificação simples para evitar re-render desnecessário se for idêntico
         setAppState(currentState => {
             const currentStr = JSON.stringify({ ...currentState, lastUpdated: 0 });
             const newStr = JSON.stringify({ ...sanitized, lastUpdated: 0 });
@@ -77,12 +71,8 @@ const App: React.FC = () => {
                 return currentState;
             }
 
-            console.log("SYNC: Atualização recebida do servidor.");
-            isRemoteUpdate.current = true; // Marca flag para evitar loop de auto-save imediato
-            
-            // Persiste localmente também
+            isRemoteUpdate.current = true; 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
-            
             setDbSyncStatus('idle');
             return sanitized;
         });
@@ -91,7 +81,6 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // 3. DOLLAR RATE (Background Fetch)
   const fetchDollarRate = useCallback(async () => {
     try {
         const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
@@ -119,15 +108,12 @@ const App: React.FC = () => {
   }, [fetchDollarRate, missingConfig]);
 
 
-  // 4. SAVE FUNCTION (Centralizada no Service)
   const handleSaveToCloud = useCallback(async (state: AppState, isManual: boolean = false) => {
       if (missingConfig || !db) return;
       
       setDbSyncStatus('syncing');
       try {
-          // Usa a função exportada do service
           await saveDashboardState(state);
-          
           if (isManual) {
               setDbSyncStatus('success');
               setTimeout(() => setDbSyncStatus('idle'), 2000);
@@ -140,15 +126,9 @@ const App: React.FC = () => {
       }
   }, [missingConfig]);
 
-  const handleManualSave = () => {
-      handleSaveToCloud(appState, true);
-  };
-
-  // 5. AUTO-SAVE (Background Debounce)
   useEffect(() => {
     if (missingConfig) return;
 
-    // Se a atualização veio do servidor, não disparamos o save de volta imediatamente
     if (isRemoteUpdate.current) {
         isRemoteUpdate.current = false;
         return;
@@ -157,13 +137,12 @@ const App: React.FC = () => {
     const handler = setTimeout(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         handleSaveToCloud(appState, false); 
-    }, 1000); // 1 segundo de debounce para auto-save
+    }, 1000); 
     
     return () => clearTimeout(handler);
   }, [appState, handleSaveToCloud, missingConfig]);
 
 
-  // --- STATE ACTIONS ---
   const updateState = (updates: Partial<AppState>) => {
     setAppState(prev => {
         return { 
@@ -198,7 +177,7 @@ const App: React.FC = () => {
         lastUpdated: Date.now()
     };
     setAppState(newState);
-    handleManualSave(); 
+    handleSaveToCloud(newState, true); 
   };
 
   const handleExport = () => {
@@ -219,7 +198,7 @@ const App: React.FC = () => {
                   const importedState = JSON.parse(e.target.result as string);
                   const mergedState = { ...INITIAL_STATE, ...importedState, lastUpdated: Date.now() };
                   setAppState(mergedState);
-                  handleManualSave(); // Salva imediatamente no cloud ao importar
+                  handleSaveToCloud(mergedState, true);
               }
           } catch (err) {
               alert("Erro ao ler arquivo de backup.");
@@ -251,7 +230,7 @@ const App: React.FC = () => {
         setDollarRate={setDollarRate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRefreshRate={fetchDollarRate}
-        onManualSave={handleManualSave}
+        onManualSave={() => handleSaveToCloud(appState, true)}
         lastRateUpdate={lastRateUpdate}
         isDbConnected={true} 
         dbSyncStatus={dbSyncStatus}
@@ -266,8 +245,60 @@ const App: React.FC = () => {
         )}
         {activeTab === Tab.PROGRESSO && (
             <Progress 
-            state={appState} 
-            updateState={updateState}
+                title="JOEY | ALEX | RUBINHO"
+                dollarRate={appState.dollarRate}
+                startDate={appState.startDate}
+                startDepositUsd={appState.startDepositUsd}
+                currentDate={appState.currentDate}
+                currentBalanceUsd={appState.currentBalanceUsd}
+                dailyHistory={appState.dailyHistory}
+                additionalDepositDraft={appState.drafts.progress.additionalDeposit}
+                onUpdate={(upds) => {
+                    const mapped: any = { ...upds };
+                    if (upds.additionalDeposit !== undefined) {
+                        updateState({
+                            ...mapped,
+                            drafts: {
+                                ...appState.drafts,
+                                progress: { ...appState.drafts.progress, additionalDeposit: upds.additionalDeposit }
+                            }
+                        });
+                    } else {
+                        updateState(mapped);
+                    }
+                }}
+            />
+        )}
+        {activeTab === Tab.PROGRESSO_JM && (
+            <Progress 
+                title="JOEY | MICAEL"
+                dollarRate={appState.dollarRate}
+                startDate={appState.startDate_jm}
+                startDepositUsd={appState.startDepositUsd_jm}
+                currentDate={appState.currentDate_jm}
+                currentBalanceUsd={appState.currentBalanceUsd_jm}
+                dailyHistory={appState.dailyHistory_jm}
+                additionalDepositDraft={appState.drafts.progress_jm.additionalDeposit}
+                onUpdate={(upds) => {
+                    const mapped: any = {};
+                    if (upds.startDate) mapped.startDate_jm = upds.startDate;
+                    if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_jm = upds.startDepositUsd;
+                    if (upds.currentDate) mapped.currentDate_jm = upds.currentDate;
+                    if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_jm = upds.currentBalanceUsd;
+                    if (upds.dailyHistory) mapped.dailyHistory_jm = upds.dailyHistory;
+                    
+                    if (upds.additionalDeposit !== undefined) {
+                        updateState({
+                            ...mapped,
+                            drafts: {
+                                ...appState.drafts,
+                                progress_jm: { ...appState.drafts.progress_jm, additionalDeposit: upds.additionalDeposit }
+                            }
+                        });
+                    } else {
+                        updateState(mapped);
+                    }
+                }}
             />
         )}
         {activeTab === Tab.SAQUES && (

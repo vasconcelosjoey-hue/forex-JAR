@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { AppState, DailyRecord } from '../types';
+import { DailyRecord, Drafts } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Calendar, Target, Plus, ArrowUpRight, Save, Trash2, Flag, Percent, Wallet, ArrowRight, ChevronDown, ChevronUp, Camera, Share2, Copy } from 'lucide-react';
@@ -8,44 +8,60 @@ import { parseCurrency } from '../utils/format';
 import { toBlob } from 'html-to-image';
 
 interface ProgressProps {
-  state: AppState;
-  updateState: (updates: Partial<AppState>) => void;
+  title: string;
+  dollarRate: number;
+  startDate: string;
+  startDepositUsd: number;
+  currentDate: string;
+  currentBalanceUsd: number;
+  dailyHistory: DailyRecord[];
+  additionalDepositDraft: string;
+  onUpdate: (updates: any) => void;
 }
 
-export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
+export const Progress: React.FC<ProgressProps> = ({ 
+  title,
+  dollarRate,
+  startDate,
+  startDepositUsd,
+  currentDate,
+  currentBalanceUsd,
+  dailyHistory,
+  additionalDepositDraft,
+  onUpdate 
+}) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'success'>('idle');
   
-  // Refs para captura de imagem
   const fullReportRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<HTMLDivElement>(null);
 
-  const daysElapsed = state.dailyHistory?.length || 0;
+  const daysElapsed = dailyHistory?.length || 0;
   const mathDays = daysElapsed || 1; 
 
-  const totalGrowthUsd = state.currentBalanceUsd - state.startDepositUsd;
-  const growthPercentage = state.startDepositUsd > 0 
-    ? (totalGrowthUsd / state.startDepositUsd) * 100 
+  const totalGrowthUsd = currentBalanceUsd - startDepositUsd;
+  const growthPercentage = startDepositUsd > 0 
+    ? (totalGrowthUsd / startDepositUsd) * 100 
     : 0;
   
   const dailyYieldPercent = growthPercentage / mathDays;
   const standardUsd = totalGrowthUsd;
-  const standardBrl = standardUsd * state.dollarRate;
+  const standardBrl = standardUsd * dollarRate;
   
   const calculateCentsBrl = (balanceUsd: number, rate: number) => {
-    const profitRaw = balanceUsd - state.startDepositUsd;
+    const profitRaw = balanceUsd - startDepositUsd;
     const valRealUsd = profitRaw / 100;
     return valRealUsd * rate;
   };
 
-  const currentCentsBrl = calculateCentsBrl(state.currentBalanceUsd, state.dollarRate);
+  const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
   const profitCentsRaw = totalGrowthUsd; 
   const dailyAvgBrl = currentCentsBrl / mathDays;
 
   const goal = 1000000;
-  const goalProgress = Math.min((state.currentBalanceUsd / goal) * 100, 100);
-  const remaining = goal - state.currentBalanceUsd;
-  const isGoalReached = state.currentBalanceUsd >= goal;
+  const goalProgress = Math.min((currentBalanceUsd / goal) * 100, 100);
+  const remaining = goal - currentBalanceUsd;
+  const isGoalReached = currentBalanceUsd >= goal;
 
   const handleCopyAsImage = async (ref: React.RefObject<HTMLDivElement>, statusKey: string) => {
     if (!ref.current) return;
@@ -72,18 +88,12 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   };
 
   const handleAddToStartDeposit = () => {
-    const amountToAdd = parseCurrency(state.drafts.progress?.additionalDeposit || '0');
+    const amountToAdd = parseCurrency(additionalDepositDraft || '0');
     if (!isNaN(amountToAdd) && amountToAdd > 0) {
-        updateState({
-            startDepositUsd: state.startDepositUsd + amountToAdd,
-            currentBalanceUsd: state.currentBalanceUsd + amountToAdd, 
-            drafts: {
-                ...state.drafts,
-                progress: {
-                    ...state.drafts.progress,
-                    additionalDeposit: '' 
-                }
-            }
+        onUpdate({
+            startDepositUsd: startDepositUsd + amountToAdd,
+            currentBalanceUsd: currentBalanceUsd + amountToAdd, 
+            additionalDeposit: '' 
         });
     }
   };
@@ -95,10 +105,10 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
   };
 
   const handleRegisterDay = () => {
-      const dateToRegister = state.currentDate;
-      const balanceSnapshot = state.currentBalanceUsd;
-      const rateSnapshot = state.dollarRate;
-      const investedSnapshot = state.startDepositUsd;
+      const dateToRegister = currentDate;
+      const balanceSnapshot = currentBalanceUsd;
+      const rateSnapshot = dollarRate;
+      const investedSnapshot = startDepositUsd;
       const scoreSnapshot = calculateCentsBrl(balanceSnapshot, rateSnapshot);
 
       const newRecord: DailyRecord = {
@@ -109,8 +119,8 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
           investedUsd: investedSnapshot
       };
 
-      const existingIndex = (state.dailyHistory || []).findIndex(r => r.date === dateToRegister);
-      let newHistory = [...(state.dailyHistory || [])];
+      const existingIndex = (dailyHistory || []).findIndex(r => r.date === dateToRegister);
+      let newHistory = [...(dailyHistory || [])];
 
       if (existingIndex >= 0) {
           if (!window.confirm(`Já existe um registro para a data ${formatDateDisplay(dateToRegister)}. Atualizar com valores de hoje?`)) return;
@@ -120,17 +130,17 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
       }
 
       newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      updateState({ dailyHistory: newHistory });
+      onUpdate({ dailyHistory: newHistory });
       setIsHistoryOpen(true);
   };
 
   const deleteRecord = (dateToDelete: string) => {
       const confirmed = window.confirm("CONFIRMAR: Apagar este snapshot e recalcular histórico?");
       if (!confirmed) return;
-      const currentHistory = state.dailyHistory || [];
+      const currentHistory = dailyHistory || [];
       const newHistory = currentHistory.filter(r => r.date !== dateToDelete);
       newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      updateState({ dailyHistory: newHistory });
+      onUpdate({ dailyHistory: newHistory });
   };
 
   return (
@@ -139,7 +149,10 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
        <div className="flex flex-wrap gap-4 items-center justify-between border-b-2 border-white/10 pb-4">
            <div className="flex items-center gap-2">
                <div className="w-5 h-5 bg-[#00e676]"></div>
-               <h2 className="text-xl font-black text-white uppercase tracking-widest">Painel de Progresso</h2>
+               <div className="flex flex-col">
+                    <h2 className="text-xl font-black text-white uppercase tracking-widest leading-none">Painel de Progresso</h2>
+                    <span className="text-[10px] text-[#00e676] font-black uppercase mt-1 tracking-widest">{title}</span>
+               </div>
            </div>
            
            <div className="flex gap-2">
@@ -173,17 +186,17 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                <Card className="lg:col-span-10 p-6" color="success">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
-                        <Input label="Data Início" type="date" variant="success" value={state.startDate} onChange={(e) => updateState({ startDate: e.target.value })} className="w-full" />
+                        <Input label="Data Início" type="date" variant="success" value={startDate} onChange={(e) => onUpdate({ startDate: e.target.value })} className="w-full" />
                         <div className="lg:col-span-2 grid grid-cols-2 gap-4 relative">
                             <div className="absolute top-1/2 left-[48%] -translate-y-1/2 text-white hidden md:block"><ArrowRight size={16} /></div>
-                            <Input label="Total Aportado (USD)" mask="currency" prefix="$" variant="success" value={state.startDepositUsd} onChange={(e) => updateState({ startDepositUsd: parseCurrency(e.target.value) })} />
-                            <Input label="Novo Aporte (+)" mask="currency" prefix="$" placeholder="0,00" variant="success" value={state.drafts.progress?.additionalDeposit || ''} onChange={(e) => updateState({ drafts: { ...state.drafts, progress: { ...state.drafts.progress, additionalDeposit: e.target.value } } })} actionButton={
+                            <Input label="Total Aportado (USD)" mask="currency" prefix="$" variant="success" value={startDepositUsd} onChange={(e) => onUpdate({ startDepositUsd: parseCurrency(e.target.value) })} />
+                            <Input label="Novo Aporte (+)" mask="currency" prefix="$" placeholder="0,00" variant="success" value={additionalDepositDraft || ''} onChange={(e) => onUpdate({ additionalDeposit: e.target.value })} actionButton={
                                     <button onClick={handleAddToStartDeposit} title="Adicionar ao Capital e Saldo" className="bg-[#111] hover:bg-[#00e676] hover:text-black border-l-2 border-[#00e676]/50 text-neutral-200 h-full px-4 transition-colors flex items-center justify-center rounded-none"><Plus size={16} /></button>
                                 }
                             />
                         </div>
-                        <Input label="Data Hoje" type="date" variant="success" value={state.currentDate} onChange={(e) => updateState({ currentDate: e.target.value })} />
-                        <Input label="Saldo Total (USD)" mask="currency" prefix="$" variant="success" className="text-[#00e676]" value={state.currentBalanceUsd} onChange={(e) => updateState({ currentBalanceUsd: parseCurrency(e.target.value) })} />
+                        <Input label="Data Hoje" type="date" variant="success" value={currentDate} onChange={(e) => onUpdate({ currentDate: e.target.value })} />
+                        <Input label="Saldo Total (USD)" mask="currency" prefix="$" variant="success" className="text-[#00e676]" value={currentBalanceUsd} onChange={(e) => onUpdate({ currentBalanceUsd: parseCurrency(e.target.value) })} />
                     </div>
                </Card>
                <button onClick={handleRegisterDay} className="lg:col-span-2 bg-[#00e676] hover:bg-white text-black font-black uppercase tracking-widest border-2 border-transparent hover:border-[#00e676] shadow-[4px_4px_0px_0px_white] hover:shadow-[4px_4px_0px_0px_#00e676] transition-all flex flex-col items-center justify-center gap-2 p-4 active:translate-y-1 active:shadow-none min-h-[80px]">
@@ -202,7 +215,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                          </div>
                          <div className="text-5xl md:text-7xl font-black text-white tracking-tighter font-sans">
                             <span className="text-[#00e676] text-4xl align-top mr-3 font-mono">$</span>
-                            {state.currentBalanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {currentBalanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                          </div>
                     </div>
                     <div className="flex-1 w-full">
@@ -238,7 +251,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                <div className="flex items-center gap-3">
                    <div className="w-4 h-4 bg-[#00e676]"></div>
                    <h3 className="text-base font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA (SNAPSHOTS)</h3>
-                   <span className="ml-6 text-xs text-white font-black uppercase tracking-tighter bg-white/10 px-2 py-0.5">{state.dailyHistory?.length || 0} DIAS REGISTRADOS</span>
+                   <span className="ml-6 text-xs text-white font-black uppercase tracking-tighter bg-white/10 px-2 py-0.5">{dailyHistory?.length || 0} DIAS REGISTRADOS</span>
                </div>
                <div className="text-[#00e676] group-hover:scale-125 transition-transform">{isHistoryOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}</div>
            </button>
@@ -257,7 +270,7 @@ export const Progress: React.FC<ProgressProps> = ({ state, updateState }) => {
                            </tr>
                        </thead>
                        <tbody className="text-sm font-mono text-white font-bold">
-                           {(state.dailyHistory || []).map((record, index, arr) => {
+                           {(dailyHistory || []).map((record, index, arr) => {
                                const prevRecord = arr[index + 1];
                                const isFirstRecord = index === arr.length - 1;
                                const dayResult = isFirstRecord ? record.centsBrl : record.centsBrl - (prevRecord?.centsBrl || 0);

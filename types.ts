@@ -2,29 +2,30 @@
 export enum Tab {
   ROADMAP = 'ROADMAP',
   PROGRESSO = 'PROGRESSO',
+  PROGRESSO_JM = 'PROGRESSO_JM',
   SAQUES = 'SAQUES',
   DASHBOARD = 'DASHBOARD'
 }
 
-export type PartnerName = 'JOEY' | 'ALEX' | 'RUBINHO' | 'TAX';
+export type PartnerName = 'JOEY' | 'ALEX' | 'RUBINHO' | 'MICAEL' | 'TAX';
 
 export interface Transaction {
   id: string;
   type: 'DEPOSIT' | 'WITHDRAWAL';
   partner: PartnerName;
   amountBrl: number;
-  amountCents: number; // The calculated unit based on rate at time of entry (or calculated)
+  amountCents: number; 
   rateSnapshot: number;
   date: string;
   timestamp: number;
 }
 
 export interface DailyRecord {
-  date: string;       // YYYY-MM-DD
-  balanceUsd: number; // Snapshot of balance
-  rate: number;       // Snapshot of dollar rate
-  centsBrl: number;   // Calculated score at that moment
-  investedUsd?: number; // Snapshot of total deposited (Capital Principal) at that moment
+  date: string;       
+  balanceUsd: number; 
+  rate: number;       
+  centsBrl: number;   
+  investedUsd?: number; 
 }
 
 export interface Drafts {
@@ -45,22 +46,31 @@ export interface Drafts {
   progress: {
     additionalDeposit: string;
   };
+  progress_jm: {
+    additionalDeposit: string;
+  };
 }
 
 export interface AppState {
   dollarRate: number;
   transactions: Transaction[];
-  // Progress Tab Specifics
+  // Progress Tab 1 (JAR)
   startDate: string;
   startDepositUsd: number;
   currentDate: string;
   currentBalanceUsd: number;
-  dailyHistory: DailyRecord[]; // New field for snapshots
-  lastUpdated: number; // Timestamp for sync conflict resolution
+  dailyHistory: DailyRecord[];
+  // Progress Tab 2 (JM)
+  startDate_jm: string;
+  startDepositUsd_jm: number;
+  currentDate_jm: string;
+  currentBalanceUsd_jm: number;
+  dailyHistory_jm: DailyRecord[];
+  
+  lastUpdated: number; 
   drafts: Drafts;
 }
 
-// Alias solicitado para definir o estado global compartilhado
 export type DashboardState = AppState;
 
 export interface WithdrawalCalculation {

@@ -1,3 +1,4 @@
+
 import { AppState } from "./types";
 
 export const INITIAL_STATE: AppState = {
@@ -8,6 +9,13 @@ export const INITIAL_STATE: AppState = {
   currentDate: new Date().toISOString().split('T')[0],
   currentBalanceUsd: 0,
   dailyHistory: [],
+  // JM Init
+  startDate_jm: new Date().toISOString().split('T')[0],
+  startDepositUsd_jm: 0,
+  currentDate_jm: new Date().toISOString().split('T')[0],
+  currentBalanceUsd_jm: 0,
+  dailyHistory_jm: [],
+
   lastUpdated: 0,
   drafts: {
     roadmap: { JOEY: '', ALEX: '', RUBINHO: '' },
@@ -21,6 +29,9 @@ export const INITIAL_STATE: AppState = {
       regTax: ''
     },
     progress: {
+      additionalDeposit: ''
+    },
+    progress_jm: {
       additionalDeposit: ''
     }
   }
