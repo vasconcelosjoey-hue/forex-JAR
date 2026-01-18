@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface CardProps {
@@ -9,10 +10,10 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = ({ children, className = '', title, color = 'default' }) => {
   const styles = {
-    default: 'border-white/20 bg-[#111]', // Neutral/Roadmap base
+    default: 'border-white/20 bg-[#111]',
     danger: 'border-[#ff4444] bg-[#ff4444]/5',
-    success: 'border-[#00e676] bg-[#00e676]/5', // Progress base
-    warning: 'border-[#ffd700] bg-[#ffd700]/5', // Withdrawals base
+    success: 'border-[#00e676] bg-[#00e676]/5',
+    warning: 'border-[#ffd700] bg-[#ffd700]/5',
   }[color];
 
   const titleColors = {
@@ -23,9 +24,9 @@ export const Card: React.FC<CardProps> = ({ children, className = '', title, col
   }[color];
 
   return (
-    <div className={`border-2 rounded-none p-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] ${styles} ${className}`}>
+    <div className={`border-2 rounded-none p-4 md:p-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] ${styles} ${className}`}>
       {title && (
-        <h3 className={`text-sm font-black uppercase tracking-tighter mb-4 border-b-2 border-white/10 pb-2 flex justify-between items-center ${titleColors}`}>
+        <h3 className={`text-[10px] md:text-sm font-black uppercase tracking-tighter mb-4 border-b-2 border-white/10 pb-2 flex justify-between items-center ${titleColors}`}>
           {title}
           <div className="w-2 h-2 bg-current"></div>
         </h3>
