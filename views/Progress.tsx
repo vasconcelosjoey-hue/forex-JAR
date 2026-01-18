@@ -217,10 +217,10 @@ export const Progress: React.FC<ProgressProps> = ({
                 <StatsCard label="Dias Operação" value={daysElapsed.toString()} icon={<Calendar size={18} />} color="success" />
                 <StatsCard label="Patrimônio %" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={18} />} />
                 <StatsCard label="Média Diária %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={18} />} />
-                <StatsCard label="Lucro USD" value={`$ ${standardUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} />
-                <StatsCard label="Lucro BRL" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color={standardBrl >= 0 ? 'success' : 'danger'} />
+                <StatsCard label="LUCRO USD" value={`$ ${standardUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} />
+                <StatsCard label="LUCRO BRL STANDARD" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="white" variant="highlight" />
                 <StatsCard label="Cents Totais" value={`${profitCentsRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} subValue="c" color="success" />
-                <StatsCard label="Score BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="success" />
+                <StatsCard label="LUCRO CENT BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="white" variant="highlight" />
                 <StatsCard label="Média BRL" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="purple" />
            </div>
        </div>
@@ -242,7 +242,7 @@ export const Progress: React.FC<ProgressProps> = ({
                                <th className="py-4 px-4">Data</th>
                                <th className="py-4 px-4">Saldo (USD)</th>
                                <th className="py-4 px-4">Rate</th>
-                               <th className="py-4 px-4 text-right text-[#00e676]">Score (BRL)</th>
+                               <th className="py-4 px-4 text-right text-[#00e676]">LUCRO CENT BRL</th>
                                <th className="py-4 px-4 text-right">Resultado</th>
                                <th className="py-4 px-2 w-10"></th>
                            </tr>
@@ -277,8 +277,23 @@ export const Progress: React.FC<ProgressProps> = ({
   );
 };
 
-const StatsCard = ({ label, value, subValue, icon, color = 'default' }: any) => {
-    const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]' };
+const StatsCard = ({ label, value, subValue, icon, color = 'default', variant = 'default' }: any) => {
+    const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]', white: 'text-white' };
+    
+    if (variant === 'highlight') {
+        return (
+            <Card className="flex flex-col justify-center min-h-[110px] !bg-[#00e676] !border-[#00e676] shadow-[4px_4px_0px_0px_white]">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] md:text-[10px] uppercase font-black tracking-widest text-black">{label}</span>
+                    <div className="text-black/30">{icon}</div>
+                </div>
+                <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.4)]">
+                    {value} <span className="text-[10px] opacity-60 text-white ml-1">{subValue}</span>
+                </div>
+            </Card>
+        );
+    }
+
     return (
         <Card className="flex flex-col justify-center min-h-[110px]">
             <div className="flex items-center justify-between mb-2">
