@@ -26,7 +26,7 @@ export const Card: React.FC<CardProps> = ({ children, className = '', title, col
   return (
     <div className={`border-2 rounded-none p-4 md:p-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] ${styles} ${className}`}>
       {title && (
-        <h3 className={`text-[10px] md:text-sm font-black uppercase tracking-tighter mb-4 border-b-2 border-white/10 pb-2 flex justify-between items-center ${titleColors}`}>
+        <h3 className={`text-xs md:text-base font-black uppercase tracking-widest mb-4 border-b-2 border-white/10 pb-2 flex justify-between items-center ${titleColors}`}>
           {title}
           <div className="w-2 h-2 bg-current"></div>
         </h3>

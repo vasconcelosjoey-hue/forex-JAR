@@ -146,22 +146,22 @@ export const Progress: React.FC<ProgressProps> = ({
            <div className="flex items-center gap-2">
                <div className="w-5 h-5 bg-[#00e676]"></div>
                <div className="flex flex-col">
-                    <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-widest leading-none">Painel de Progresso</h2>
-                    <span className="text-[10px] text-[#00e676] font-black uppercase mt-1 tracking-widest">{title}</span>
+                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest leading-none">Painel de Progresso</h2>
+                    <span className="text-[11px] text-[#00e676] font-black uppercase mt-1 tracking-widest">{title}</span>
                </div>
            </div>
            
            <div className="flex gap-2 w-full sm:w-auto">
                <button 
                     onClick={() => handleCopyAsImage(snapshotRef, 'snapshot')}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[9px] font-black uppercase tracking-tighter transition-all bg-black text-[#00e676] border-[#00e676]"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-black text-[#00e676] border-[#00e676]"
                >
                    {copyStatus === 'success' ? <Copy size={12} /> : <Camera size={12} />}
                    TABELA
                </button>
                <button 
                     onClick={() => handleCopyAsImage(fullReportRef, 'report')}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[9px] font-black uppercase tracking-tighter transition-all bg-[#00e676] text-black border-[#00e676]"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-[#00e676] text-black border-[#00e676]"
                >
                    <Share2 size={12} />
                    RELATÓRIO
@@ -189,8 +189,8 @@ export const Progress: React.FC<ProgressProps> = ({
            <div className="relative border-4 border-white bg-black p-6 md:p-10 flex flex-col justify-center shadow-[8px_8px_0px_0px_#00e676]">
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
                     <div className="flex-shrink-0 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-white/20 pb-6 md:pb-0 md:pr-12 w-full md:w-auto">
-                         <div className="text-[10px] md:text-base uppercase font-black text-white tracking-[0.2em] mb-2 md:mb-4 flex items-center justify-center md:justify-start gap-3">
-                            <Target size={16} className="text-[#00e676]" />
+                         <div className="text-xs md:text-lg uppercase font-black text-white tracking-[0.2em] mb-2 md:mb-4 flex items-center justify-center md:justify-start gap-3">
+                            <Target size={18} className="text-[#00e676]" />
                             OBJETIVO FINAL: 1 MILHÃO
                          </div>
                          <div className="text-3xl md:text-7xl font-black text-white tracking-tighter font-sans break-all">
@@ -202,7 +202,7 @@ export const Progress: React.FC<ProgressProps> = ({
                         <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 mb-4">
                             <span className="text-4xl md:text-6xl font-black text-[#00e676] font-sans">{goalProgress.toFixed(1)}%</span>
                             <div className="bg-white/10 px-3 py-2 border border-white/20 text-center sm:text-right">
-                                <p className="text-[9px] font-black text-white/60 uppercase">Objetivo Restante</p>
+                                <p className="text-[10px] font-black text-white/60 uppercase">Objetivo Restante</p>
                                 <p className="text-xs md:text-sm font-black text-[#00e676] uppercase tracking-wider">$ {remaining.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
                             </div>
                         </div>
@@ -218,9 +218,9 @@ export const Progress: React.FC<ProgressProps> = ({
                 <StatsCard label="Patrimônio %" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} icon={<ArrowUpRight size={18} />} />
                 <StatsCard label="Média Diária %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" icon={<Percent size={18} />} />
                 <StatsCard label="LUCRO USD" value={`$ ${standardUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color={standardUsd >= 0 ? 'success' : 'danger'} />
-                <StatsCard label="LUCRO BRL STANDARD" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="white" variant="highlight" />
+                <StatsCard label="LUCRO BRL STANDARD" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="black" variant="highlight" />
                 <StatsCard label="Cents Totais" value={`${profitCentsRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} subValue="c" color="success" />
-                <StatsCard label="LUCRO CENT BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="white" variant="highlight" />
+                <StatsCard label="LUCRO CENT BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="black" variant="highlight" />
                 <StatsCard label="Média BRL" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="purple" />
            </div>
        </div>
@@ -228,8 +228,8 @@ export const Progress: React.FC<ProgressProps> = ({
        <div ref={snapshotRef} className="border-2 border-[#00e676] bg-[#000] mt-4">
            <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-4 py-4 bg-[#111]">
                <div className="flex flex-col items-start gap-1">
-                   <h3 className="text-xs font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA</h3>
-                   <span className="text-[9px] text-[#00e676] font-black uppercase bg-[#00e676]/10 px-2 py-0.5">{dailyHistory?.length || 0} REGISTROS</span>
+                   <h3 className="text-sm md:text-base font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA</h3>
+                   <span className="text-[10px] text-[#00e676] font-black uppercase bg-[#00e676]/10 px-2 py-0.5">{dailyHistory?.length || 0} REGISTROS</span>
                </div>
                <div className="text-[#00e676]">{isHistoryOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</div>
            </button>
@@ -237,7 +237,7 @@ export const Progress: React.FC<ProgressProps> = ({
            {isHistoryOpen && (
                <div className="overflow-x-auto border-t-2 border-[#00e676]/20">
                    <table className="w-full text-left border-collapse min-w-[600px]">
-                       <thead className="bg-[#050505] text-[10px] uppercase text-white font-black border-b-2 border-white/10">
+                       <thead className="bg-[#050505] text-[10px] md:text-xs uppercase text-white font-black border-b-2 border-white/10">
                            <tr>
                                <th className="py-4 px-4">Data</th>
                                <th className="py-4 px-4">Saldo (USD)</th>
@@ -278,17 +278,17 @@ export const Progress: React.FC<ProgressProps> = ({
 };
 
 const StatsCard = ({ label, value, subValue, icon, color = 'default', variant = 'default' }: any) => {
-    const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]', white: 'text-white' };
+    const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]', white: 'text-white', black: 'text-black' };
     
     if (variant === 'highlight') {
         return (
             <Card className="flex flex-col justify-center min-h-[110px] !bg-[#00e676] !border-[#00e676] shadow-[4px_4px_0px_0px_white]">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] md:text-[10px] uppercase font-black tracking-widest text-black">{label}</span>
+                    <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-black/80">{label}</span>
                     <div className="text-black/30">{icon}</div>
                 </div>
-                <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.4)]">
-                    {value} <span className="text-[10px] opacity-60 text-white ml-1">{subValue}</span>
+                <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all text-black">
+                    {value} <span className="text-[10px] opacity-60 text-black ml-1">{subValue}</span>
                 </div>
             </Card>
         );
@@ -297,7 +297,7 @@ const StatsCard = ({ label, value, subValue, icon, color = 'default', variant = 
     return (
         <Card className="flex flex-col justify-center min-h-[110px]">
             <div className="flex items-center justify-between mb-2">
-                <span className="text-[9px] md:text-[10px] uppercase font-black tracking-widest text-white/60">{label}</span>
+                <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-white/60">{label}</span>
                 <div className="text-white/20">{icon}</div>
             </div>
             <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all" style={{ color: colors[color] || '#fff' }}>
