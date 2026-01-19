@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tab } from '../types';
-import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart, Menu, X, Cloud, Users } from 'lucide-react';
+import { Settings, RotateCcw, LayoutDashboard, TrendingUp, ArrowDownCircle, PieChart, Menu, X, Cloud, Users, BarChart3 } from 'lucide-react';
 
 interface LayoutProps {
   currentTab: Tab;
@@ -34,7 +34,8 @@ export const Layout: React.FC<LayoutProps> = ({
   const getThemeColor = (tab: Tab) => {
     switch(tab) {
         case Tab.PROGRESSO: 
-        case Tab.PROGRESSO_JM: return 'text-[#00e676]';
+        case Tab.PROGRESSO_JM: 
+        case Tab.PROGRESSO_J200: return 'text-[#00e676]';
         case Tab.SAQUES: return 'text-[#ffd700]';
         case Tab.DASHBOARD: return 'text-white';
         default: return 'text-[#FF6F00]';
@@ -44,7 +45,8 @@ export const Layout: React.FC<LayoutProps> = ({
   const getActiveStyle = (tab: Tab) => {
     switch(tab) {
         case Tab.PROGRESSO:
-        case Tab.PROGRESSO_JM: return 'bg-[#00e676] border-[#00e676] text-black shadow-[4px_4px_0px_0px_#00e676]';
+        case Tab.PROGRESSO_JM:
+        case Tab.PROGRESSO_J200: return 'bg-[#00e676] border-[#00e676] text-black shadow-[4px_4px_0px_0px_#00e676]';
         case Tab.SAQUES: return 'bg-[#ffd700] border-[#ffd700] text-black shadow-[4px_4px_0px_0px_#ffd700]';
         case Tab.DASHBOARD: return 'bg-white border-white text-black shadow-[4px_4px_0px_0px_white]';
         default: return 'bg-[#FF6F00] border-[#FF6F00] text-black shadow-[4px_4px_0px_0px_#FF6F00]';
@@ -54,7 +56,8 @@ export const Layout: React.FC<LayoutProps> = ({
   const getHoverStyle = (tab: Tab) => {
     switch(tab) {
         case Tab.PROGRESSO:
-        case Tab.PROGRESSO_JM: return 'hover:border-[#00e676] hover:text-[#00e676] hover:shadow-[4px_4px_0px_0px_#00e676]';
+        case Tab.PROGRESSO_JM:
+        case Tab.PROGRESSO_J200: return 'hover:border-[#00e676] hover:text-[#00e676] hover:shadow-[4px_4px_0px_0px_#00e676]';
         case Tab.SAQUES: return 'hover:border-[#ffd700] hover:text-[#ffd700] hover:shadow-[4px_4px_0px_0px_#ffd700]';
         case Tab.DASHBOARD: return 'hover:border-white hover:text-white hover:shadow-[4px_4px_0px_0px_white]';
         default: return 'hover:border-[#FF6F00] hover:text-[#FF6F00] hover:shadow-[4px_4px_0px_0px_#FF6F00]';
@@ -64,6 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const navItems = [
     { id: Tab.PROGRESSO, label: 'Progresso J.A.R.', icon: <TrendingUp size={16} /> },
     { id: Tab.PROGRESSO_JM, label: 'Progresso J.M.', icon: <Users size={16} /> },
+    { id: Tab.PROGRESSO_J200, label: 'Progresso J200', icon: <BarChart3 size={16} /> },
     { id: Tab.ROADMAP, label: 'Roadmap', icon: <LayoutDashboard size={16} /> },
     { id: Tab.SAQUES, label: 'Saques', icon: <ArrowDownCircle size={16} /> },
     { id: Tab.DASHBOARD, label: 'Dashboard', icon: <PieChart size={16} /> },

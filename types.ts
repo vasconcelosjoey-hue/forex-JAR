@@ -3,6 +3,7 @@ export enum Tab {
   ROADMAP = 'ROADMAP',
   PROGRESSO = 'PROGRESSO',
   PROGRESSO_JM = 'PROGRESSO_JM',
+  PROGRESSO_J200 = 'PROGRESSO_J200',
   SAQUES = 'SAQUES',
   DASHBOARD = 'DASHBOARD'
 }
@@ -49,6 +50,9 @@ export interface Drafts {
   progress_jm: {
     additionalDeposit: string;
   };
+  progress_j200: {
+    additionalDeposit: string;
+  };
 }
 
 export interface AppState {
@@ -66,6 +70,12 @@ export interface AppState {
   currentDate_jm: string;
   currentBalanceUsd_jm: number;
   dailyHistory_jm: DailyRecord[];
+  // Progress Tab 3 (J200)
+  startDate_j200: string;
+  startDepositUsd_j200: number;
+  currentDate_j200: string;
+  currentBalanceUsd_j200: number;
+  dailyHistory_j200: DailyRecord[];
   
   lastUpdated: number; 
   drafts: Drafts;

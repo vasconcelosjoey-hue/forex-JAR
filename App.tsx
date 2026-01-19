@@ -47,6 +47,7 @@ const App: React.FC = () => {
               withdrawals: { ...baseDrafts.withdrawals, ...(remoteDrafts.withdrawals || {}) },
               progress: { ...baseDrafts.progress, ...(remoteDrafts.progress || {}) },
               progress_jm: { ...baseDrafts.progress_jm, ...(remoteDrafts.progress_jm || {}) },
+              progress_j200: { ...baseDrafts.progress_j200, ...(remoteDrafts.progress_j200 || {}) },
           },
       };
   };
@@ -293,6 +294,38 @@ const App: React.FC = () => {
                             drafts: {
                                 ...appState.drafts,
                                 progress_jm: { ...appState.drafts.progress_jm, additionalDeposit: upds.additionalDeposit }
+                            }
+                        });
+                    } else {
+                        updateState(mapped);
+                    }
+                }}
+            />
+        )}
+        {activeTab === Tab.PROGRESSO_J200 && (
+            <Progress 
+                title="J200 USD"
+                dollarRate={appState.dollarRate}
+                startDate={appState.startDate_j200}
+                startDepositUsd={appState.startDepositUsd_j200}
+                currentDate={appState.currentDate_j200}
+                currentBalanceUsd={appState.currentBalanceUsd_j200}
+                dailyHistory={appState.dailyHistory_j200}
+                additionalDepositDraft={appState.drafts.progress_j200.additionalDeposit}
+                onUpdate={(upds) => {
+                    const mapped: any = {};
+                    if (upds.startDate) mapped.startDate_j200 = upds.startDate;
+                    if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_j200 = upds.startDepositUsd;
+                    if (upds.currentDate) mapped.currentDate_j200 = upds.currentDate;
+                    if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_j200 = upds.currentBalanceUsd;
+                    if (upds.dailyHistory) mapped.dailyHistory_j200 = upds.dailyHistory;
+                    
+                    if (upds.additionalDeposit !== undefined) {
+                        updateState({
+                            ...mapped,
+                            drafts: {
+                                ...appState.drafts,
+                                progress_j200: { ...appState.drafts.progress_j200, additionalDeposit: upds.additionalDeposit }
                             }
                         });
                     } else {

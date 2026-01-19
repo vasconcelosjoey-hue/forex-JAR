@@ -15,6 +15,12 @@ export const INITIAL_STATE: AppState = {
   currentDate_jm: new Date().toISOString().split('T')[0],
   currentBalanceUsd_jm: 0,
   dailyHistory_jm: [],
+  // J200 Init
+  startDate_j200: new Date().toISOString().split('T')[0],
+  startDepositUsd_j200: 0,
+  currentDate_j200: new Date().toISOString().split('T')[0],
+  currentBalanceUsd_j200: 0,
+  dailyHistory_j200: [],
 
   lastUpdated: 0,
   drafts: {
@@ -32,6 +38,9 @@ export const INITIAL_STATE: AppState = {
       additionalDeposit: ''
     },
     progress_jm: {
+      additionalDeposit: ''
+    },
+    progress_j200: {
       additionalDeposit: ''
     }
   }
