@@ -3,7 +3,8 @@ import React, { useState, useRef } from 'react';
 import { DailyRecord } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { Calendar, Target, Plus, ArrowUpRight, Save, Trash2, Flag, Percent, Wallet, ArrowRight, ChevronDown, ChevronUp, Camera, Share2, Copy } from 'lucide-react';
+import { CustomAlert } from '../components/ui/CustomAlert';
+import { Calendar, Target, Plus, ArrowUpRight, Save, Trash2, Flag, Percent, Wallet, ArrowRight, ChevronDown, ChevronUp, Camera, Share2, Copy, Check } from 'lucide-react';
 import { parseCurrency } from '../utils/format';
 import { toBlob } from 'html-to-image';
 
@@ -30,8 +31,14 @@ export const Progress: React.FC<ProgressProps> = ({
   additionalDepositDraft,
   onUpdate 
 }) => {
-  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false); // Fechado por padrão
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'success'>('idle');
+  const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean; title: string; message: string; type: 'confirm' | 'alert'; onConfirm?: () => void }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'alert'
+  });
   
   const fullReportRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<HTMLDivElement>(null);
@@ -61,7 +68,6 @@ export const Progress: React.FC<ProgressProps> = ({
   const goal = 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goal) * 100, 100);
   const remaining = goal - currentBalanceUsd;
-  const isGoalReached = currentBalanceUsd >= goal;
 
   const handleCopyAsImage = async (ref: React.RefObject<HTMLDivElement>, statusKey: string) => {
     if (!ref.current) return;
@@ -81,7 +87,6 @@ export const Progress: React.FC<ProgressProps> = ({
             setTimeout(() => setCopyStatus('idle'), 2000);
         }
     } catch (err) {
-        console.error("Erro ao copiar imagem:", err);
         setCopyStatus('idle');
     }
   };
@@ -104,44 +109,79 @@ export const Progress: React.FC<ProgressProps> = ({
   };
 
   const handleRegisterDay = () => {
-      const dateToRegister = currentDate;
-      const balanceSnapshot = currentBalanceUsd;
-      const rateSnapshot = dollarRate;
-      const investedSnapshot = startDepositUsd;
-      const scoreSnapshot = calculateCentsBrl(balanceSnapshot, rateSnapshot);
+      const existingIndex = (dailyHistory || []).findIndex(r => r.date === currentDate);
+      
+      const proceed = () => {
+          const balanceSnapshot = currentBalanceUsd;
+          const rateSnapshot = dollarRate;
+          const investedSnapshot = startDepositUsd;
+          const scoreSnapshot = calculateCentsBrl(balanceSnapshot, rateSnapshot);
 
-      const newRecord: DailyRecord = {
-          date: dateToRegister,
-          balanceUsd: balanceSnapshot,
-          rate: rateSnapshot,
-          centsBrl: scoreSnapshot,
-          investedUsd: investedSnapshot
+          const newRecord: DailyRecord = {
+              date: currentDate,
+              balanceUsd: balanceSnapshot,
+              rate: rateSnapshot,
+              centsBrl: scoreSnapshot,
+              investedUsd: investedSnapshot
+          };
+
+          let newHistory = [...(dailyHistory || [])];
+          if (existingIndex >= 0) {
+              newHistory[existingIndex] = newRecord;
+          } else {
+              newHistory.push(newRecord);
+          }
+
+          newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          onUpdate({ dailyHistory: newHistory });
+          
+          setAlertConfig({
+              isOpen: true,
+              title: "SUCESSO",
+              message: "Snapshot registrado com sucesso.",
+              type: 'alert'
+          });
       };
 
-      const existingIndex = (dailyHistory || []).findIndex(r => r.date === dateToRegister);
-      let newHistory = [...(dailyHistory || [])];
-
       if (existingIndex >= 0) {
-          if (!window.confirm(`Já existe um registro para a data ${formatDateDisplay(dateToRegister)}. Atualizar?`)) return;
-          newHistory[existingIndex] = newRecord;
+          setAlertConfig({
+              isOpen: true,
+              title: "CONFIRMAÇÃO",
+              message: `Já existe um registro para a data ${formatDateDisplay(currentDate)}. Deseja substituir os dados atuais?`,
+              type: 'confirm',
+              onConfirm: proceed
+          });
       } else {
-          newHistory.push(newRecord);
+          proceed();
       }
-
-      newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      onUpdate({ dailyHistory: newHistory });
   };
 
   const deleteRecord = (dateToDelete: string) => {
-      if (!window.confirm("CONFIRMAR: Apagar este snapshot?")) return;
-      const currentHistory = dailyHistory || [];
-      const newHistory = currentHistory.filter(r => r.date !== dateToDelete);
-      onUpdate({ dailyHistory: newHistory });
+      setAlertConfig({
+          isOpen: true,
+          title: "APAGAR REGISTRO",
+          message: "Tem certeza que deseja remover este snapshot permanentemente?",
+          type: 'confirm',
+          onConfirm: () => {
+              const currentHistory = dailyHistory || [];
+              const newHistory = currentHistory.filter(r => r.date !== dateToDelete);
+              onUpdate({ dailyHistory: newHistory });
+          }
+      });
   };
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 max-w-full font-mono pb-12 overflow-x-hidden">
        
+       <CustomAlert 
+          isOpen={alertConfig.isOpen} 
+          onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={alertConfig.onConfirm}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          type={alertConfig.type}
+       />
+
        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b-2 border-white/10 pb-4">
            <div className="flex items-center gap-2">
                <div className="w-5 h-5 bg-[#00e676]"></div>
@@ -154,14 +194,14 @@ export const Progress: React.FC<ProgressProps> = ({
            <div className="flex gap-2 w-full sm:w-auto">
                <button 
                     onClick={() => handleCopyAsImage(snapshotRef, 'snapshot')}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-black text-[#00e676] border-[#00e676]"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-3 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-black text-[#00e676] border-[#00e676] shadow-[4px_4px_0px_0px_#00e676] active:translate-x-1 active:translate-y-1 active:shadow-none"
                >
-                   {copyStatus === 'success' ? <Copy size={12} /> : <Camera size={12} />}
+                   {copyStatus === 'success' ? <Check size={12} /> : <Camera size={12} />}
                    TABELA
                </button>
                <button 
                     onClick={() => handleCopyAsImage(fullReportRef, 'report')}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-[#00e676] text-black border-[#00e676]"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-3 border-2 text-[10px] font-black uppercase tracking-tighter transition-all bg-[#00e676] text-black border-[#00e676] shadow-[4px_4px_0px_0px_white] active:translate-x-1 active:translate-y-1 active:shadow-none"
                >
                    <Share2 size={12} />
                    RELATÓRIO
@@ -178,11 +218,20 @@ export const Progress: React.FC<ProgressProps> = ({
                         <button onClick={handleAddToStartDeposit} className="bg-[#111] hover:bg-[#00e676] text-[#00e676] hover:text-black h-full px-4 transition-colors"><Plus size={16} /></button>
                     }/>
                     <Input label="Data Hoje" type="date" variant="success" value={currentDate} onChange={(e) => onUpdate({ currentDate: e.target.value })} />
-                    <Input label="Saldo Hoje (USD)" mask="currency" prefix="$" variant="success" className="text-[#00e676]" value={currentBalanceUsd} onChange={(e) => onUpdate({ currentBalanceUsd: parseCurrency(e.target.value) })} />
+                    <Input 
+                        label="Saldo Hoje (USD)" 
+                        mask="currency" 
+                        prefix="$" 
+                        variant="success" 
+                        className="text-[#00e676]" 
+                        value={currentBalanceUsd} 
+                        onChange={(e) => onUpdate({ currentBalanceUsd: parseCurrency(e.target.value) })} 
+                        onKeyDown={(e) => e.key === 'Enter' && handleRegisterDay()}
+                    />
                 </div>
            </Card>
 
-           <button onClick={handleRegisterDay} className="w-full bg-[#00e676] text-black font-black uppercase py-4 shadow-[4px_4px_0px_0px_white] active:translate-y-1 active:shadow-none flex items-center justify-center gap-3">
+           <button onClick={handleRegisterDay} className="w-full bg-[#00e676] text-black font-black uppercase py-4 shadow-[4px_4px_0px_0px_white] active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center justify-center gap-3 transition-all">
                <Save size={20} /> REGISTRAR SNAPSHOT
            </button>
 
@@ -226,7 +275,7 @@ export const Progress: React.FC<ProgressProps> = ({
        </div>
 
        <div ref={snapshotRef} className="border-2 border-[#00e676] bg-[#000] mt-4">
-           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-4 py-4 bg-[#111]">
+           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-4 py-4 bg-[#111] transition-colors hover:bg-white/5">
                <div className="flex flex-col items-start gap-1">
                    <h3 className="text-sm md:text-base font-black text-white uppercase tracking-widest">EVOLUÇÃO DIÁRIA</h3>
                    <span className="text-[10px] text-[#00e676] font-black uppercase bg-[#00e676]/10 px-2 py-0.5">{dailyHistory?.length || 0} REGISTROS</span>
@@ -282,9 +331,9 @@ const StatsCard = ({ label, value, subValue, icon, color = 'default', variant = 
     
     if (variant === 'highlight') {
         return (
-            <Card className="flex flex-col justify-center min-h-[110px] !bg-[#00e676] !border-[#00e676] shadow-[4px_4px_0px_0px_white]">
+            <Card className="flex flex-col justify-center min-h-[110px] !bg-[#00e676] !border-[#00e676] shadow-[4px_4px_0px_0px_white] transition-all hover:scale-[1.02]">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-black/80">{label}</span>
+                    <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-black/90 leading-tight">{label}</span>
                     <div className="text-black/30">{icon}</div>
                 </div>
                 <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all text-black">
@@ -297,7 +346,7 @@ const StatsCard = ({ label, value, subValue, icon, color = 'default', variant = 
     return (
         <Card className="flex flex-col justify-center min-h-[110px]">
             <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-white/60">{label}</span>
+                <span className="text-[11px] md:text-sm uppercase font-black tracking-widest text-white/60 leading-tight">{label}</span>
                 <div className="text-white/20">{icon}</div>
             </div>
             <div className="text-2xl md:text-3xl font-black tracking-tighter leading-none break-all" style={{ color: colors[color] || '#fff' }}>
