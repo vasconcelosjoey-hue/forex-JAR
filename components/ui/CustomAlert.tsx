@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertOctagon, CheckCircle2, X } from 'lucide-react';
 
 interface CustomAlertProps {
@@ -12,6 +12,26 @@ interface CustomAlertProps {
 }
 
 export const CustomAlert: React.FC<CustomAlertProps> = ({ isOpen, onClose, onConfirm, title, message, type = 'alert' }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      if (e.key === 'Enter') {
+        if (type === 'confirm' && onConfirm) {
+          onConfirm();
+          onClose();
+        } else {
+          onClose();
+        }
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, type, onConfirm, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -33,13 +53,13 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({ isOpen, onClose, onCon
                   onClick={onClose}
                   className="flex-1 py-3 border-2 border-white/20 text-white font-black uppercase text-[10px] hover:bg-white/10 transition-colors"
                 >
-                  Cancelar
+                  Cancelar (ESC)
                 </button>
                 <button 
                   onClick={() => { onConfirm?.(); onClose(); }}
                   className="flex-1 py-3 bg-[#00e676] text-black font-black uppercase text-[10px] shadow-[4px_4px_0px_0px_white] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
                 >
-                  Confirmar
+                  Confirmar (ENTER)
                 </button>
               </>
             ) : (
@@ -47,7 +67,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({ isOpen, onClose, onCon
                 onClick={onClose}
                 className="w-full py-3 bg-white text-black font-black uppercase text-[10px] shadow-[4px_4px_0px_0px_#888] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
               >
-                Entendido
+                Entendido (ENTER)
               </button>
             )}
           </div>
