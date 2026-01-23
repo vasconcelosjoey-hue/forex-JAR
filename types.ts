@@ -34,6 +34,9 @@ export interface Drafts {
     JOEY: string;
     ALEX: string;
     RUBINHO: string;
+    JOEY_DATE: string;
+    ALEX_DATE: string;
+    RUBINHO_DATE: string;
   };
   withdrawals: {
     calcAmount: string;
