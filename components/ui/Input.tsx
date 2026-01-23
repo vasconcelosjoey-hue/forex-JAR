@@ -71,24 +71,24 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <div className={`flex flex-col w-full ${className}`}>
-      {label && <label className="text-[10px] md:text-xs uppercase font-black text-white/70 mb-1.5 ml-0 font-mono tracking-widest">{label}</label>}
+      {label && <label className="text-xs md:text-sm uppercase font-black text-white/70 mb-2 ml-0 font-mono tracking-widest">{label}</label>}
       <div className="relative flex items-center group w-full">
-        {prefix && <span className="absolute left-3 text-neutral-500 font-bold text-xs md:text-sm font-mono pointer-events-none">{prefix}</span>}
+        {prefix && <span className="absolute left-4 text-neutral-500 font-bold text-sm md:text-base font-mono pointer-events-none">{prefix}</span>}
         <input
           {...props}
           type={isCurrency ? "tel" : props.type}
           value={displayValue}
           onChange={handleChange}
           className={`
-            w-full bg-black border-2 rounded-none py-3 md:py-3.5 font-mono font-bold text-sm md:text-base
+            w-full bg-black border-2 rounded-none py-4 md:py-5 font-mono font-black text-base md:text-lg
             placeholder-neutral-800 transition-all outline-none
             ${styles.border} ${styles.text} ${styles.focus}
-            ${prefix ? 'pl-9 md:pl-10' : 'pl-4'}
-            ${suffix ? 'pr-12' : 'pr-4'}
-            ${actionButton ? 'pr-14' : ''}
+            ${prefix ? 'pl-10 md:pl-12' : 'pl-5'}
+            ${suffix ? 'pr-14' : 'pr-5'}
+            ${actionButton ? 'pr-16' : ''}
           `}
         />
-        {suffix && !actionButton && <span className="absolute right-3 text-neutral-600 text-[10px] font-bold font-mono">{suffix}</span>}
+        {suffix && !actionButton && <span className="absolute right-4 text-neutral-600 text-xs font-bold font-mono">{suffix}</span>}
         {actionButton && (
           <div className="absolute right-1 top-1 bottom-1 flex items-center">
             {actionButton}

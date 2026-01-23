@@ -124,7 +124,7 @@ export const Progress: React.FC<ProgressProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 font-mono pb-6 overflow-x-hidden animate-in fade-in duration-300">
+    <div className="flex flex-col gap-6 font-mono pb-10 overflow-x-hidden animate-in fade-in duration-300">
        <CustomAlert 
           isOpen={alertConfig.isOpen} 
           onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
@@ -134,100 +134,100 @@ export const Progress: React.FC<ProgressProps> = ({
           type={alertConfig.type}
        />
 
-       <div className="flex items-center justify-between border-b-2 border-white/10 pb-3">
-           <div className="flex items-center gap-2">
-               <div className="w-4 h-4 bg-[#00e676] shadow-[2px_2px_0px_0px_white]"></div>
-               <h2 className="text-base font-black text-white uppercase tracking-tighter">{title}</h2>
+       <div className="flex items-center justify-between border-b-4 border-white/10 pb-5">
+           <div className="flex items-center gap-3">
+               <div className="w-6 h-6 bg-[#00e676] shadow-[3px_3px_0px_0px_white]"></div>
+               <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">{title}</h2>
            </div>
-           <div className="flex gap-2">
-               <button onClick={() => handleCopyAsImage(snapshotRef)} className="p-2 border border-[#00e676] text-[#00e676] hover:bg-[#00e676] hover:text-black transition-all">
-                   {copyStatus === 'copying' ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+           <div className="flex gap-3">
+               <button onClick={() => handleCopyAsImage(snapshotRef)} className="p-3 border-2 border-[#00e676] text-[#00e676] hover:bg-[#00e676] hover:text-black transition-all">
+                   {copyStatus === 'copying' ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                </button>
-               <button onClick={() => handleCopyAsImage(fullReportRef)} className="p-2 border border-white/30 text-white/50 hover:bg-white hover:text-black transition-all">
-                   <Share2 size={12} />
+               <button onClick={() => handleCopyAsImage(fullReportRef)} className="p-3 border-2 border-white/30 text-white/50 hover:bg-white hover:text-black transition-all">
+                   <Share2 size={16} />
                </button>
            </div>
        </div>
 
-       <div ref={fullReportRef} className="flex flex-col gap-4">
-           <Card className="!p-3" color="success">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
-                    <Input label="Início" type="date" variant="success" value={startDate} onChange={(e) => onUpdate({ startDate: e.target.value })} className="!py-2" />
+       <div ref={fullReportRef} className="flex flex-col gap-6">
+           <Card className="!p-5" color="success">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <Input label="Início" type="date" variant="success" value={startDate} onChange={(e) => onUpdate({ startDate: e.target.value })} />
                     <Input label="Cap. (USD)" mask="currency" prefix="$" variant="success" value={startDepositUsd} onChange={(e) => onUpdate({ startDepositUsd: parseCurrency(e.target.value) })} />
                     <Input label="Aporte" mask="currency" prefix="$" variant="success" value={additionalDepositDraft || ''} onChange={(e) => onUpdate({ additionalDeposit: e.target.value })} actionButton={
-                        <button onClick={handleAddToStartDeposit} className="h-full px-2 text-[#00e676] border-l border-white/10"><Plus size={14} /></button>
+                        <button onClick={handleAddToStartDeposit} className="h-full px-4 text-[#00e676] border-l-2 border-white/10 hover:bg-[#00e676]/10 transition-colors"><Plus size={18} /></button>
                     }/>
                     <Input label="Hoje" type="date" variant="success" value={currentDate} onChange={(e) => onUpdate({ currentDate: e.target.value })} />
                     <Input label="Saldo (USD)" mask="currency" prefix="$" variant="success" className="text-[#00e676]" value={currentBalanceUsd} onChange={(e) => onUpdate({ currentBalanceUsd: parseCurrency(e.target.value) })} onKeyDown={(e) => e.key === 'Enter' && handleRegisterDay()} />
                 </div>
            </Card>
 
-           <div className="relative border-2 border-white bg-black p-4 flex flex-col shadow-[6px_6px_0px_0px_#00e676]">
-                <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
+           <div className="relative border-4 border-white bg-black p-6 md:p-8 flex flex-col shadow-[8px_8px_0px_0px_#00e676]">
+                <div className="flex flex-col md:flex-row items-center gap-6 justify-between">
                     <div className="text-center md:text-left">
-                         <div className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1 flex items-center justify-center md:justify-start gap-2">
-                            <Target size={14} className="text-[#00e676]" /> SALDO ATUAL
+                         <div className="text-xs uppercase font-black text-white/40 tracking-[0.3em] mb-2 flex items-center justify-center md:justify-start gap-3">
+                            <Target size={20} className="text-[#00e676]" /> SALDO ATUAL
                          </div>
-                         <div className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none">
-                            <span className="text-[#00e676] text-lg align-top mr-1">$</span>
+                         <div className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                            <span className="text-[#00e676] text-xl align-top mr-2 font-mono opacity-80">$</span>
                             {currentBalanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                          </div>
                     </div>
-                    <div className="flex flex-col items-center md:items-end gap-2">
-                        <span className="text-2xl md:text-4xl font-black text-[#00e676]">{goalProgress.toFixed(1)}%</span>
-                        <div className="w-48 h-2 bg-[#111] border border-white/20 overflow-hidden">
+                    <div className="flex flex-col items-center md:items-end gap-3">
+                        <span className="text-3xl md:text-5xl font-black text-[#00e676]">{goalProgress.toFixed(1)}%</span>
+                        <div className="w-64 h-3 bg-[#111] border-2 border-white/20 overflow-hidden">
                             <div className="h-full bg-[#00e676] transition-all duration-700" style={{ width: `${goalProgress}%` }}></div>
                         </div>
-                        <span className="text-[9px] text-white/30 uppercase font-bold tracking-widest">Restam $ {remaining.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                        <span className="text-[10px] text-white/30 uppercase font-bold tracking-[0.2em]">Restam $ {remaining.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
                     </div>
                 </div>
            </div>
 
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <StatsCard label="Dias" value={daysElapsed.toString()} color="success" />
-                <StatsCard label="ROI %" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} />
-                <StatsCard label="Média %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" />
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <StatsCard label="Dias Corridos" value={daysElapsed.toString()} color="success" />
+                <StatsCard label="ROI Total %" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} />
+                <StatsCard label="Média Diária %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" />
                 <StatsCard label="Lucro USD" value={`$ ${totalGrowthUsd.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="white" />
                 <StatsCard label="BRL Standard" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
-                <StatsCard label="Lucro BRL" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
+                <StatsCard label="Lucro BRL Real" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="Média BRL" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="purple" />
-                <button onClick={handleRegisterDay} className="bg-[#00e676] text-black font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-[3px_3px_0px_0px_white] active:translate-y-0.5">
-                    <Save size={14} /> REGISTRAR
+                <button onClick={handleRegisterDay} className="bg-[#00e676] text-black font-black uppercase text-xs md:text-sm flex items-center justify-center gap-3 shadow-[5px_5px_0px_0px_white] active:translate-y-1 active:shadow-none transition-all py-4">
+                    <Save size={20} /> REGISTRAR DIA
                 </button>
            </div>
        </div>
 
-       <div ref={snapshotRef} className="border-2 border-[#00e676] bg-black mt-4">
-           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-4 py-3 bg-[#111] border-b-2 border-[#00e676]/20">
-               <span className="text-[10px] font-black text-white uppercase tracking-widest">Histórico de Snapshots ({dailyHistory.length})</span>
-               <div className="text-[#00e676]">{isHistoryOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+       <div ref={snapshotRef} className="border-4 border-[#00e676] bg-black mt-6">
+           <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-4 bg-[#111] border-b-2 border-[#00e676]/20">
+               <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Histórico de Snapshots ({dailyHistory.length})</span>
+               <div className="text-[#00e676]">{isHistoryOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</div>
            </button>
            {isHistoryOpen && (
-               <div className="overflow-x-auto max-h-60 overflow-y-auto">
-                   <table className="w-full text-left border-collapse min-w-[500px]">
-                       <thead className="bg-[#050505] text-[9px] uppercase text-white/40 font-black border-b border-white/10">
+               <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                   <table className="w-full text-left border-collapse min-w-[600px]">
+                       <thead className="bg-[#050505] text-[10px] uppercase text-white/40 font-black border-b border-white/10">
                            <tr>
-                               <th className="py-2 px-4">Data</th>
-                               <th className="py-2 px-4">USD</th>
-                               <th className="py-2 px-4 text-right text-[#00e676]">BRL TOTAL</th>
-                               <th className="py-2 px-4 text-right">Dia</th>
-                               <th className="py-2 px-2 w-8"></th>
+                               <th className="py-3 px-6">Data</th>
+                               <th className="py-3 px-6">USD Balance</th>
+                               <th className="py-3 px-6 text-right text-[#00e676]">BRL TOTAL</th>
+                               <th className="py-3 px-6 text-right">Var. Dia</th>
+                               <th className="py-3 px-3 w-10"></th>
                            </tr>
                        </thead>
-                       <tbody className="text-[10px] font-mono text-white">
+                       <tbody className="text-xs font-mono text-white">
                            {dailyHistory.map((record, index, arr) => {
                                const prev = arr[index + 1];
                                const diff = index === arr.length - 1 ? record.centsBrl : record.centsBrl - (prev?.centsBrl || 0);
                                return (
                                    <tr key={record.date} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                       <td className="py-2 px-4 opacity-50">{formatDateDisplay(record.date)}</td>
-                                       <td className="py-2 px-4 font-bold text-white">$ {record.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                       <td className="py-2 px-4 text-right font-black text-[#00e676]">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                       <td className={`py-2 px-4 text-right font-bold ${diff >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
+                                       <td className="py-3 px-6 opacity-50 font-bold">{formatDateDisplay(record.date)}</td>
+                                       <td className="py-3 px-6 font-black text-white">$ {record.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                       <td className="py-3 px-6 text-right font-black text-[#00e676]">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                       <td className={`py-3 px-6 text-right font-black ${diff >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
                                             {diff > 0 ? '+' : ''}{diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                        </td>
-                                       <td className="py-2 px-2 text-center">
-                                           <button onClick={() => { if(confirm("Apagar?")) onUpdate({ dailyHistory: dailyHistory.filter(r => r.date !== record.date) }); }} className="text-white/10 hover:text-red-500"><Trash2 size={10} /></button>
+                                       <td className="py-3 px-3 text-center">
+                                           <button onClick={() => { if(confirm("Apagar?")) onUpdate({ dailyHistory: dailyHistory.filter(r => r.date !== record.date) }); }} className="text-white/20 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                                        </td>
                                    </tr>
                                );
@@ -243,16 +243,18 @@ export const Progress: React.FC<ProgressProps> = ({
 
 const StatsCard = ({ label, value, color = 'default', variant = 'default' }: any) => {
     const colors: any = { default: 'text-white', success: 'text-[#00e676]', danger: 'text-[#ff4444]', purple: 'text-[#d500f9]', gold: 'text-[#ffd700]', white: 'text-white', black: 'text-black' };
+    
     if (variant === 'highlight') return (
-        <div className="flex flex-col justify-center min-h-[50px] bg-[#00e676] border border-white/20 p-2 shadow-[2px_2px_0px_0px_white]">
-            <span className="text-[8px] uppercase font-black text-black/60 leading-tight mb-0.5">{label}</span>
-            <div className="text-sm font-black text-black leading-none truncate">{value}</div>
+        <div className="flex flex-col justify-center min-h-[70px] bg-[#00e676] border-2 border-white/20 p-4 shadow-[4px_4px_0px_0px_white]">
+            <span className="text-[10px] uppercase font-black text-black/60 leading-tight mb-1 tracking-wider">{label}</span>
+            <div className="text-lg font-black text-black leading-none truncate">{value}</div>
         </div>
     );
+    
     return (
-        <div className="flex flex-col justify-center min-h-[50px] bg-[#111] border border-white/10 p-2">
-            <span className="text-[8px] uppercase font-black text-white/40 leading-tight mb-0.5">{label}</span>
-            <div className={`text-sm font-black leading-none truncate ${colors[color]}`}>{value}</div>
+        <div className="flex flex-col justify-center min-h-[70px] bg-[#111] border-2 border-white/10 p-4 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.05)]">
+            <span className="text-[10px] uppercase font-black text-white/40 leading-tight mb-1 tracking-wider">{label}</span>
+            <div className={`text-base font-black leading-none truncate ${colors[color]}`}>{value}</div>
         </div>
     );
 };

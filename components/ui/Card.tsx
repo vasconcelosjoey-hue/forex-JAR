@@ -24,11 +24,11 @@ export const Card: React.FC<CardProps> = ({ children, className = '', title, col
   }[color];
 
   return (
-    <div className={`border-2 rounded-none p-3 md:p-4 shadow-[3px_3px_0px_0px_rgba(255,255,255,0.1)] ${styles} ${className}`}>
+    <div className={`border-2 rounded-none p-5 md:p-6 shadow-[5px_5px_0px_0px_rgba(255,255,255,0.1)] ${styles} ${className}`}>
       {title && (
-        <h3 className={`text-[11px] md:text-xs font-black uppercase tracking-[0.2em] mb-3 border-b border-white/10 pb-2 flex justify-between items-center ${titleColors}`}>
+        <h3 className={`text-xs md:text-sm font-black uppercase tracking-[0.2em] mb-4 border-b-2 border-white/10 pb-3 flex justify-between items-center ${titleColors}`}>
           {title}
-          <div className="w-1.5 h-1.5 bg-current opacity-50"></div>
+          <div className="w-2 h-2 bg-current opacity-50"></div>
         </h3>
       )}
       {children}
