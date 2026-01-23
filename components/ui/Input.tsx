@@ -71,7 +71,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <div className={`flex flex-col w-full ${className}`}>
-      {label && <label className="text-xs md:text-sm uppercase font-black text-white/70 mb-2 ml-0 font-mono tracking-widest">{label}</label>}
+      {label && <label className="text-xs md:text-sm uppercase font-black text-white mb-2 ml-0 font-mono tracking-widest">{label}</label>}
       <div className="relative flex items-center group w-full">
         {prefix && <span className="absolute left-4 text-neutral-500 font-bold text-sm md:text-base font-mono pointer-events-none">{prefix}</span>}
         <input
