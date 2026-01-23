@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AppState, Transaction, PartnerName } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { Trash2, Plus, Calendar } from 'lucide-react';
+import { Trash2, Plus, DollarSign } from 'lucide-react';
 import { parseCurrency } from '../utils/format';
 
 type RoadmapPartner = 'JOEY' | 'ALEX' | 'RUBINHO';
@@ -50,15 +50,35 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
     handleInputChange(partner, 'amount', '');
   };
 
+  const totalAportes = useMemo(() => {
+    return state.transactions
+      .filter(t => t.type === 'DEPOSIT')
+      .reduce((acc, t) => acc + t.amountBrl, 0);
+  }, [state.transactions]);
+
   return (
     <div className="flex flex-col gap-4 w-full font-mono pb-8 max-w-full overflow-hidden animate-in fade-in duration-300">
       
       <div className="flex items-center gap-3 border-b-2 border-white/10 pb-3 mb-2">
         <div className="w-5 h-5 bg-[#FF6F00] shadow-[2px_2px_0px_0px_white]"></div>
-        <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter">Roadmap de Aportes</h2>
+        <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter">APORTES JAR</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card title="TOTAL ACUMULADO" color="warning" className="flex flex-col justify-center">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FF6F00] text-black rounded-none">
+                    <DollarSign size={20} />
+                </div>
+                <div>
+                    <p className="text-[14px] md:text-xl font-black text-white leading-none">
+                        R$ {totalAportes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-[8px] text-neutral-500 uppercase font-black tracking-widest mt-1">Soma de todos os aportes</p>
+                </div>
+            </div>
+        </Card>
+
         {(['JOEY', 'ALEX', 'RUBINHO'] as RoadmapPartner[]).map(partner => (
           <Card key={partner} title={`Registro: ${partner}`} color="default">
             <div className="space-y-3">

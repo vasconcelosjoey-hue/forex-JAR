@@ -68,7 +68,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: Tab.PROGRESSO, label: 'Progresso J.A.R.', icon: <TrendingUp size={16} /> },
     { id: Tab.PROGRESSO_JM, label: 'Progresso J.M.', icon: <Users size={16} /> },
     { id: Tab.PROGRESSO_J200, label: 'Progresso J200', icon: <BarChart3 size={16} /> },
-    { id: Tab.ROADMAP, label: 'Roadmap', icon: <LayoutDashboard size={16} /> },
+    { id: Tab.APORTES_JAR, label: 'APORTES JAR', icon: <LayoutDashboard size={16} /> },
     { id: Tab.SAQUES, label: 'Saques', icon: <ArrowDownCircle size={16} /> },
     { id: Tab.DASHBOARD, label: 'Dashboard', icon: <PieChart size={16} /> },
   ];
@@ -88,7 +88,7 @@ export const Layout: React.FC<LayoutProps> = ({
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-black italic tracking-tighter text-white uppercase leading-[0.8]">
                 <span className={`text-xs mr-1 not-italic font-mono ${brandColor}`}>FOREX</span>
-                J.A.R.
+                DASHBOARD
             </h1>
           </div>
           <button 
@@ -109,9 +109,9 @@ export const Layout: React.FC<LayoutProps> = ({
       `}>
         
         <div className="p-6 pb-4 border-b-2 border-white/20 hidden lg:block">
-            <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase relative leading-[0.8]">
+            <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase relative leading-[0.8]">
                 <span className={`block text-[10px] mb-1 not-italic font-mono tracking-widest transition-colors ${brandColor}`}>FOREX</span>
-                J.A.R.
+                DASHBOARD
             </h1>
         </div>
 

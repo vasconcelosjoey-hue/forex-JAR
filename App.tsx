@@ -236,7 +236,7 @@ const App: React.FC = () => {
         isDbConnected={true} 
         dbSyncStatus={dbSyncStatus}
         >
-        {activeTab === Tab.ROADMAP && (
+        {activeTab === Tab.APORTES_JAR && (
             <Roadmap 
             state={appState} 
             addTransaction={addTransaction} 
