@@ -6,7 +6,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   suffix?: string;
   prefix?: string;
-  actionButton?: React.RefObject<HTMLButtonElement> | React.ReactNode;
+  actionButton?: React.ReactNode;
   variant?: 'default' | 'danger' | 'success' | 'warning';
   mask?: 'currency';
   decimals?: number;
@@ -91,7 +91,7 @@ export const Input: React.FC<InputProps> = ({
         {suffix && !actionButton && <span className="absolute right-3 text-neutral-600 text-[10px] font-bold font-mono">{suffix}</span>}
         {actionButton && (
           <div className="absolute right-1 top-1 bottom-1 flex items-center">
-            {actionButton as React.ReactNode}
+            {actionButton}
           </div>
         )}
       </div>

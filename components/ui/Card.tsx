@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface CardProps {
-  children: React.RefObject<HTMLDivElement> | React.ReactNode;
+  children: React.ReactNode;
   className?: string;
   title?: string;
   color?: 'default' | 'danger' | 'success' | 'warning';
