@@ -1,10 +1,10 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { DailyRecord } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { CustomAlert } from '../components/ui/CustomAlert';
-import { Target, Plus, Save, Trash2, ChevronDown, ChevronUp, Camera, Share2, Loader2 } from 'lucide-react';
+import { Target, Plus, Save, Trash2, ChevronDown, ChevronUp, Camera, Share2, Loader2, Wallet } from 'lucide-react';
 import { parseCurrency } from '../utils/format';
 import { toBlob } from 'html-to-image';
 
@@ -17,6 +17,7 @@ interface ProgressProps {
   currentBalanceUsd: number;
   dailyHistory: DailyRecord[];
   additionalDepositDraft: string;
+  valuationBaseBrl: number;
   onUpdate: (updates: any) => void;
 }
 
@@ -29,6 +30,7 @@ export const Progress: React.FC<ProgressProps> = ({
   currentBalanceUsd,
   dailyHistory,
   additionalDepositDraft,
+  valuationBaseBrl,
   onUpdate 
 }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false); 
@@ -42,13 +44,26 @@ export const Progress: React.FC<ProgressProps> = ({
   
   const captureRef = useRef<HTMLDivElement>(null);
 
-  const daysElapsed = dailyHistory?.length || 0;
-  const mathDays = daysElapsed || 1; 
+  // Lógica de Dias Úteis (Segunda a Sexta)
+  const businessDays = useMemo(() => {
+    if (!startDate || !currentDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(currentDate);
+    if (start > end) return 0;
+    
+    let count = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      const day = cur.getDay();
+      if (day !== 0 && day !== 6) count++; // Exclui Dom (0) e Sab (6)
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count || 1;
+  }, [startDate, currentDate]);
 
   const totalGrowthUsd = currentBalanceUsd - startDepositUsd;
   const growthPercentage = startDepositUsd > 0 ? (totalGrowthUsd / startDepositUsd) * 100 : 0;
-  const dailyYieldPercent = growthPercentage / mathDays;
-  const standardBrl = totalGrowthUsd * dollarRate;
+  const dailyYieldPercent = growthPercentage / businessDays;
   
   const calculateCentsBrl = (balanceUsd: number, rate: number) => {
     const profitRaw = balanceUsd - startDepositUsd;
@@ -56,13 +71,15 @@ export const Progress: React.FC<ProgressProps> = ({
   };
 
   const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
-  const dailyAvgBrl = currentCentsBrl / mathDays;
+  const dailyAvgBrl = currentCentsBrl / businessDays;
 
-  const valuation = 1500 + currentCentsBrl;
+  // Nova lógica de Valuation: Input BRL + Lucro BRL
+  const valuation = (valuationBaseBrl || 0) + currentCentsBrl;
 
-  const goal = 1000000;
-  const goalProgress = Math.min((currentBalanceUsd / goal) * 100, 100);
-  const remaining = goal - currentBalanceUsd;
+  // Ajuste de Meta: Se o título contiver 10K, a meta é 10.000 USD
+  const goalValue = title.includes('10K') ? 10000 : 1000000;
+  const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
+  const remaining = goalValue - currentBalanceUsd;
 
   const handleCopyAsImage = async () => {
     if (!captureRef.current || copyStatus === 'copying') return;
@@ -72,15 +89,10 @@ export const Progress: React.FC<ProgressProps> = ({
             backgroundColor: '#050505', 
             quality: 1, 
             pixelRatio: 3,
-            style: {
-                transform: 'scale(1)',
-            }
+            style: { transform: 'scale(1)' }
         });
         if (blob) {
-            // @ts-ignore - ClipboardItem may not be defined in some TypeScript environments
             const data = [new ClipboardItem({ 'image/png': blob })];
-            // Fix: Use 'write' instead of 'setItem' on navigator.clipboard as per modern Web API.
-            // Using cast to 'any' to avoid potential missing type definitions for the Clipboard API.
             await (navigator.clipboard as any).write(data);
             setCopyStatus('success');
             setTimeout(() => setCopyStatus('idle'), 3000);
@@ -149,16 +161,36 @@ export const Progress: React.FC<ProgressProps> = ({
        />
 
        <div ref={captureRef} className="flex flex-col gap-4 p-1">
-           {/* HEADER: NOMES + VALUATION */}
+           {/* HEADER: NOMES + VALUATION + INPUT APORTE */}
            <div className="flex flex-col md:flex-row items-center justify-between border-b-4 border-white/10 pb-4 gap-4">
-               <div className="flex items-center gap-4">
+               <div className="flex flex-col md:flex-row items-center gap-4">
                    <div className="flex items-center gap-3">
                        <div className="w-5 h-5 bg-[#00e676] shadow-[2px_2px_0px_0px_white]"></div>
                        <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">{title}</h2>
                    </div>
-                   <div className="border-l-2 border-white/20 pl-4 py-1">
-                       <span className="block text-[10px] text-white uppercase font-black tracking-widest">VALUATION</span>
-                       <span className="text-xl font-black text-[#00e676]">R$ {valuation.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                   
+                   <div className="flex items-center gap-4 border-l-2 border-white/20 pl-4 py-1">
+                       {/* Input Capital BRL ao lado do Valuation */}
+                       <div className="flex flex-col">
+                           <span className="text-[9px] text-white/50 uppercase font-black tracking-widest mb-1">CAPITAL BRL</span>
+                           <div className="relative">
+                               <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] text-white/30 font-bold">R$</span>
+                               <input 
+                                  type="text"
+                                  className="bg-transparent border-b border-white/20 pl-6 pr-2 py-0 text-sm font-black text-[#00e676] focus:outline-none focus:border-[#00e676] w-24"
+                                  placeholder="0,00"
+                                  value={valuationBaseBrl === 0 ? '' : valuationBaseBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  onChange={(e) => onUpdate({ valuationBaseBrl: parseCurrency(e.target.value) })}
+                               />
+                           </div>
+                       </div>
+
+                       <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
+
+                       <div>
+                           <span className="block text-[10px] text-white uppercase font-black tracking-widest">VALUATION</span>
+                           <span className="text-xl font-black text-[#00e676]">R$ {valuation.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                       </div>
                    </div>
                </div>
                
@@ -214,7 +246,7 @@ export const Progress: React.FC<ProgressProps> = ({
 
                 {/* Right: KPI Cards */}
                 <div className="lg:col-span-7 grid grid-cols-2 gap-3">
-                    <StatsCard label="Dias Corridos" value={daysElapsed.toString()} color="success" />
+                    <StatsCard label="Dias Úteis" value={businessDays.toString()} color="success" />
                     <StatsCard label="Aumento Patrimonial" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} />
                     <StatsCard label="Média Diária %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" labelColor="gold" />
                     <StatsCard label="Lucro USD" value={`$ ${totalGrowthUsd.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="white" />
@@ -223,13 +255,13 @@ export const Progress: React.FC<ProgressProps> = ({
 
            {/* SECONDARY ROW (BRL Metrics) */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <StatsCard label="Lucro Standard" value={`R$ ${standardBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
+                <StatsCard label="Lucro Standard" value={`R$ ${(totalGrowthUsd * dollarRate).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="Lucro BRL Real" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="BRL Diário" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="purple" labelColor="purple" />
            </div>
        </div>
 
-       {/* SNAPSHOTS ARQUIVADOS (Fora da área de captura de foto rápida) */}
+       {/* SNAPSHOTS ARQUIVADOS */}
        <div className="border-4 border-[#00e676] bg-black mt-4 mx-1">
             <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-3 bg-[#111] border-b-2 border-[#00e676]/20 hover:bg-[#151515] transition-colors">
                 <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Snapshots Arquivados ({dailyHistory.length})</span>

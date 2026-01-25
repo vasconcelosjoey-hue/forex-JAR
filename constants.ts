@@ -11,18 +11,21 @@ export const INITIAL_STATE: AppState = {
   currentDate: today,
   currentBalanceUsd: 0,
   dailyHistory: [],
-  // JM Init
+  valuationBaseBrl: 0,
+  // 10K Init
   startDate_jm: today,
   startDepositUsd_jm: 0,
   currentDate_jm: today,
   currentBalanceUsd_jm: 0,
   dailyHistory_jm: [],
-  // J200 Init
+  valuationBaseBrl_jm: 0,
+  // 200USD Init
   startDate_j200: today,
   startDepositUsd_j200: 0,
   currentDate_j200: today,
   currentBalanceUsd_j200: 0,
   dailyHistory_j200: [],
+  valuationBaseBrl_j200: 0,
 
   lastUpdated: 0,
   drafts: {

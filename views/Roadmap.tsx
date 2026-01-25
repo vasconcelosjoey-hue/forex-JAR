@@ -61,7 +61,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
       
       <div className="flex items-center gap-4 border-b-4 border-white/10 pb-5 mb-2">
         <div className="w-6 h-6 bg-[#FF6F00] shadow-[3px_3px_0px_0px_white]"></div>
-        <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter">APORTES JAR</h2>
+        <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter">APORTES J.A.R.</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

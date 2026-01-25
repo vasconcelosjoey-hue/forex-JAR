@@ -2,8 +2,8 @@
 export enum Tab {
   APORTES_JAR = 'APORTES_JAR',
   PROGRESSO = 'PROGRESSO',
-  PROGRESSO_JM = 'PROGRESSO_JM',
-  PROGRESSO_J200 = 'PROGRESSO_J200',
+  PROGRESSO_10K = 'PROGRESSO_10K',
+  PROGRESSO_200USD = 'PROGRESSO_200USD',
   SAQUES = 'SAQUES',
   DASHBOARD = 'DASHBOARD'
 }
@@ -67,18 +67,21 @@ export interface AppState {
   currentDate: string;
   currentBalanceUsd: number;
   dailyHistory: DailyRecord[];
-  // Progress Tab 2 (JM)
+  valuationBaseBrl: number; // Novo
+  // Progress Tab 2 (10K)
   startDate_jm: string;
   startDepositUsd_jm: number;
   currentDate_jm: string;
   currentBalanceUsd_jm: number;
   dailyHistory_jm: DailyRecord[];
-  // Progress Tab 3 (J200)
+  valuationBaseBrl_jm: number; // Novo
+  // Progress Tab 3 (200 USD)
   startDate_j200: string;
   startDepositUsd_j200: number;
   currentDate_j200: string;
   currentBalanceUsd_j200: number;
   dailyHistory_j200: DailyRecord[];
+  valuationBaseBrl_j200: number; // Novo
   
   lastUpdated: number; 
   drafts: Drafts;

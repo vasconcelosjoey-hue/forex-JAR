@@ -253,6 +253,7 @@ const App: React.FC = () => {
                 currentDate={appState.currentDate}
                 currentBalanceUsd={appState.currentBalanceUsd}
                 dailyHistory={appState.dailyHistory}
+                valuationBaseBrl={appState.valuationBaseBrl}
                 additionalDepositDraft={appState.drafts.progress.additionalDeposit}
                 onUpdate={(upds) => {
                     const mapped: any = { ...upds };
@@ -270,15 +271,16 @@ const App: React.FC = () => {
                 }}
             />
         )}
-        {activeTab === Tab.PROGRESSO_JM && (
+        {activeTab === Tab.PROGRESSO_10K && (
             <Progress 
-                title="JOEY | MICAEL"
+                title="PROGRESSO 10K"
                 dollarRate={appState.dollarRate}
                 startDate={appState.startDate_jm}
                 startDepositUsd={appState.startDepositUsd_jm}
                 currentDate={appState.currentDate_jm}
                 currentBalanceUsd={appState.currentBalanceUsd_jm}
                 dailyHistory={appState.dailyHistory_jm}
+                valuationBaseBrl={appState.valuationBaseBrl_jm}
                 additionalDepositDraft={appState.drafts.progress_jm.additionalDeposit}
                 onUpdate={(upds) => {
                     const mapped: any = {};
@@ -287,6 +289,7 @@ const App: React.FC = () => {
                     if (upds.currentDate) mapped.currentDate_jm = upds.currentDate;
                     if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_jm = upds.currentBalanceUsd;
                     if (upds.dailyHistory) mapped.dailyHistory_jm = upds.dailyHistory;
+                    if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_jm = upds.valuationBaseBrl;
                     
                     if (upds.additionalDeposit !== undefined) {
                         updateState({
@@ -302,15 +305,16 @@ const App: React.FC = () => {
                 }}
             />
         )}
-        {activeTab === Tab.PROGRESSO_J200 && (
+        {activeTab === Tab.PROGRESSO_200USD && (
             <Progress 
-                title="J200 USD"
+                title="PROGRESSO 200 USD"
                 dollarRate={appState.dollarRate}
                 startDate={appState.startDate_j200}
                 startDepositUsd={appState.startDepositUsd_j200}
                 currentDate={appState.currentDate_j200}
                 currentBalanceUsd={appState.currentBalanceUsd_j200}
                 dailyHistory={appState.dailyHistory_j200}
+                valuationBaseBrl={appState.valuationBaseBrl_j200}
                 additionalDepositDraft={appState.drafts.progress_j200.additionalDeposit}
                 onUpdate={(upds) => {
                     const mapped: any = {};
@@ -319,6 +323,7 @@ const App: React.FC = () => {
                     if (upds.currentDate) mapped.currentDate_j200 = upds.currentDate;
                     if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_j200 = upds.currentBalanceUsd;
                     if (upds.dailyHistory) mapped.dailyHistory_j200 = upds.dailyHistory;
+                    if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_j200 = upds.valuationBaseBrl;
                     
                     if (upds.additionalDeposit !== undefined) {
                         updateState({
