@@ -4,8 +4,8 @@ import { DailyRecord } from '../types';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { CustomAlert } from '../components/ui/CustomAlert';
-import { Target, Plus, Save, Trash2, ChevronDown, ChevronUp, Camera, Share2, Loader2, Wallet } from 'lucide-react';
-import { parseCurrency } from '../utils/format';
+import { Target, Plus, Save, Trash2, ChevronDown, ChevronUp, Camera, Share2, Loader2 } from 'lucide-react';
+import { parseCurrency, formatCurrencyInput, formatCurrencyDisplay } from '../utils/format';
 import { toBlob } from 'html-to-image';
 
 interface ProgressProps {
@@ -55,7 +55,7 @@ export const Progress: React.FC<ProgressProps> = ({
     const cur = new Date(start);
     while (cur <= end) {
       const day = cur.getDay();
-      if (day !== 0 && day !== 6) count++; // Exclui Dom (0) e Sab (6)
+      if (day !== 0 && day !== 6) count++; 
       cur.setDate(cur.getDate() + 1);
     }
     return count || 1;
@@ -73,10 +73,10 @@ export const Progress: React.FC<ProgressProps> = ({
   const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
   const dailyAvgBrl = currentCentsBrl / businessDays;
 
-  // Nova lógica de Valuation: Input BRL + Lucro BRL
+  // Valuation = Aporte BRL Digitado + Lucro Real BRL
   const valuation = (valuationBaseBrl || 0) + currentCentsBrl;
 
-  // Ajuste de Meta: Se o título contiver 10K, a meta é 10.000 USD
+  // Ajuste de Meta
   const goalValue = title.includes('10K') ? 10000 : 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
   const remaining = goalValue - currentBalanceUsd;
@@ -149,6 +149,12 @@ export const Progress: React.FC<ProgressProps> = ({
       } else proceed();
   };
 
+  // Handler para o input inteligente de Capital BRL
+  const handleValuationBaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value, 2);
+    onUpdate({ valuationBaseBrl: parseCurrency(formatted) });
+  };
+
   return (
     <div className="flex flex-col gap-4 font-mono pb-10 overflow-x-hidden animate-in fade-in duration-300">
        <CustomAlert 
@@ -161,7 +167,7 @@ export const Progress: React.FC<ProgressProps> = ({
        />
 
        <div ref={captureRef} className="flex flex-col gap-4 p-1">
-           {/* HEADER: NOMES + VALUATION + INPUT APORTE */}
+           {/* HEADER: NOMES + VALUATION + INPUT APORTE INTELIGENTE */}
            <div className="flex flex-col md:flex-row items-center justify-between border-b-4 border-white/10 pb-4 gap-4">
                <div className="flex flex-col md:flex-row items-center gap-4">
                    <div className="flex items-center gap-3">
@@ -170,26 +176,26 @@ export const Progress: React.FC<ProgressProps> = ({
                    </div>
                    
                    <div className="flex items-center gap-4 border-l-2 border-white/20 pl-4 py-1">
-                       {/* Input Capital BRL ao lado do Valuation */}
+                       {/* Input Inteligente CAPITAL BRL */}
                        <div className="flex flex-col">
-                           <span className="text-[9px] text-white/50 uppercase font-black tracking-widest mb-1">CAPITAL BRL</span>
-                           <div className="relative">
-                               <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] text-white/30 font-bold">R$</span>
+                           <span className="text-[10px] text-white/50 uppercase font-black tracking-widest mb-1">CAPITAL BRL</span>
+                           <div className="relative group">
+                               <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-neutral-600 font-bold pointer-events-none">R$</span>
                                <input 
-                                  type="text"
-                                  className="bg-transparent border-b border-white/20 pl-6 pr-2 py-0 text-sm font-black text-[#00e676] focus:outline-none focus:border-[#00e676] w-24"
+                                  type="tel"
+                                  className="bg-transparent border-b-2 border-[#00e676] pl-6 pr-2 py-1 text-base md:text-xl font-black text-[#00e676] focus:outline-none transition-all w-32 md:w-40"
                                   placeholder="0,00"
-                                  value={valuationBaseBrl === 0 ? '' : valuationBaseBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  onChange={(e) => onUpdate({ valuationBaseBrl: parseCurrency(e.target.value) })}
+                                  value={valuationBaseBrl === 0 ? '' : formatCurrencyDisplay(valuationBaseBrl, 2)}
+                                  onChange={handleValuationBaseChange}
                                />
                            </div>
                        </div>
 
-                       <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
+                       <div className="h-10 w-[2px] bg-white/10 mx-2"></div>
 
                        <div>
-                           <span className="block text-[10px] text-white uppercase font-black tracking-widest">VALUATION</span>
-                           <span className="text-xl font-black text-[#00e676]">R$ {valuation.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                           <span className="block text-[10px] text-white/50 uppercase font-black tracking-widest mb-1">VALUATION</span>
+                           <span className="text-xl md:text-2xl font-black text-[#00e676]">R$ {valuation.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                        </div>
                    </div>
                </div>
@@ -222,7 +228,6 @@ export const Progress: React.FC<ProgressProps> = ({
 
            {/* MAIN METRICS INTEGRATED */}
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                {/* Left: Saldo Atual */}
                 <div className="lg:col-span-5 relative border-4 border-white bg-black p-4 md:p-5 flex flex-col justify-center shadow-[6px_6px_0px_0px_#00e676]">
                     <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
                         <div className="text-center md:text-left">
@@ -244,7 +249,6 @@ export const Progress: React.FC<ProgressProps> = ({
                     </div>
                 </div>
 
-                {/* Right: KPI Cards */}
                 <div className="lg:col-span-7 grid grid-cols-2 gap-3">
                     <StatsCard label="Dias Úteis" value={businessDays.toString()} color="success" />
                     <StatsCard label="Aumento Patrimonial" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} />
@@ -253,7 +257,6 @@ export const Progress: React.FC<ProgressProps> = ({
                 </div>
            </div>
 
-           {/* SECONDARY ROW (BRL Metrics) */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <StatsCard label="Lucro Standard" value={`R$ ${(totalGrowthUsd * dollarRate).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="Lucro BRL Real" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
@@ -261,7 +264,6 @@ export const Progress: React.FC<ProgressProps> = ({
            </div>
        </div>
 
-       {/* SNAPSHOTS ARQUIVADOS */}
        <div className="border-4 border-[#00e676] bg-black mt-4 mx-1">
             <button onClick={() => setIsHistoryOpen(!isHistoryOpen)} className="w-full flex items-center justify-between px-6 py-3 bg-[#111] border-b-2 border-[#00e676]/20 hover:bg-[#151515] transition-colors">
                 <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Snapshots Arquivados ({dailyHistory.length})</span>
