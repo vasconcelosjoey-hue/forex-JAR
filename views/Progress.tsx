@@ -71,13 +71,16 @@ export const Progress: React.FC<ProgressProps> = ({
   };
 
   const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
+  const standardProfitBrl = totalGrowthUsd * dollarRate;
   const dailyAvgBrl = currentCentsBrl / businessDays;
 
-  // Valuation = Aporte BRL Digitado + Lucro Real BRL
-  const valuation = (valuationBaseBrl || 0) + currentCentsBrl;
+  // Lógica condicional: Se for JOEY MT5, Valuation usa Lucro Standard. Caso contrário, Lucro BRL Real.
+  const isJoeyMt5 = title.includes('JOEY MT5');
+  const profitForValuation = isJoeyMt5 ? standardProfitBrl : currentCentsBrl;
+  const valuation = (valuationBaseBrl || 0) + profitForValuation;
 
-  // Ajuste de Meta
-  const goalValue = title.includes('10K') ? 10000 : 1000000;
+  // Ajuste de Meta: Todos os progressos (incluindo 10K) agora usam 1.000.000 como meta
+  const goalValue = 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
   const remaining = goalValue - currentBalanceUsd;
 
@@ -258,7 +261,7 @@ export const Progress: React.FC<ProgressProps> = ({
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <StatsCard label="Lucro Standard" value={`R$ ${(totalGrowthUsd * dollarRate).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
+                <StatsCard label="Lucro Standard" value={`R$ ${standardProfitBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="Lucro BRL Real" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
                 <StatsCard label="BRL Diário" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="purple" labelColor="purple" />
            </div>
