@@ -307,7 +307,7 @@ const App: React.FC = () => {
         )}
         {activeTab === Tab.PROGRESSO_200USD && (
             <Progress 
-                title="PROGRESSO 200 USD"
+                title="PROGRESSO JOEY MT5"
                 dollarRate={appState.dollarRate}
                 startDate={appState.startDate_j200}
                 startDepositUsd={appState.startDepositUsd_j200}
