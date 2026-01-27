@@ -79,7 +79,7 @@ export const Progress: React.FC<ProgressProps> = ({
   const profitForValuation = isJoeyMt5 ? standardProfitBrl : currentCentsBrl;
   const valuation = (valuationBaseBrl || 0) + profitForValuation;
 
-  // Ajuste de Meta: Todos os progressos (incluindo 10K) agora usam 1.000.000 como meta
+  // Ajuste de Meta: Todos os progressos agora usam 1.000.000 como meta (evitando negativos no "Restam")
   const goalValue = 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
   const remaining = goalValue - currentBalanceUsd;
@@ -126,11 +126,15 @@ export const Progress: React.FC<ProgressProps> = ({
   const handleRegisterDay = () => {
       const existingIndex = (dailyHistory || []).findIndex(r => r.date === currentDate);
       const proceed = () => {
+          // No Joey MT5, registramos o Standard Profit BRL (USD Profit * Rate)
+          // Nos outros (JAR, 10K), registramos o Cents BRL (USD Profit / 100 * Rate)
+          const profitToRecord = isJoeyMt5 ? standardProfitBrl : calculateCentsBrl(currentBalanceUsd, dollarRate);
+
           const newRecord: DailyRecord = {
               date: currentDate,
               balanceUsd: currentBalanceUsd,
               rate: dollarRate,
-              centsBrl: calculateCentsBrl(currentBalanceUsd, dollarRate),
+              centsBrl: profitToRecord, // Reutilizando o campo centsBrl para armazenar o valor correto para o tab
               investedUsd: startDepositUsd
           };
           let newHistory = [...(dailyHistory || [])];
@@ -279,7 +283,7 @@ export const Progress: React.FC<ProgressProps> = ({
                             <tr>
                                 <th className="py-3 px-6">Data</th>
                                 <th className="py-3 px-6">USD Balance</th>
-                                <th className="py-3 px-6 text-right text-[#00e676]">BRL TOTAL</th>
+                                <th className="py-3 px-6 text-right text-[#00e676]">{isJoeyMt5 ? 'STANDARD BRL' : 'BRL TOTAL'}</th>
                                 <th className="py-3 px-6 text-right">Var. Dia</th>
                                 <th className="py-3 px-3 w-10"></th>
                             </tr>
