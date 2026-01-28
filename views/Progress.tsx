@@ -72,10 +72,15 @@ export const Progress: React.FC<ProgressProps> = ({
 
   const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
   const standardProfitBrl = totalGrowthUsd * dollarRate;
-  const dailyAvgBrl = currentCentsBrl / businessDays;
-
-  // Lógica condicional: Se for JOEY MT5, Valuation usa Lucro Standard. Caso contrário, Lucro BRL Real.
+  
+  // Lógica condicional: Se for JOEY MT5, Valuation e BRL Diário usam Lucro Standard.
   const isJoeyMt5 = title.includes('JOEY MT5');
+  
+  // No Joey MT5, a média diária é calculada sobre o Standard Profit BRL
+  const dailyAvgBrl = isJoeyMt5 
+    ? standardProfitBrl / businessDays 
+    : currentCentsBrl / businessDays;
+
   const profitForValuation = isJoeyMt5 ? standardProfitBrl : currentCentsBrl;
   const valuation = (valuationBaseBrl || 0) + profitForValuation;
 
