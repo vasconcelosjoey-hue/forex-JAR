@@ -84,8 +84,8 @@ export const Progress: React.FC<ProgressProps> = ({
   const profitForValuation = isJoeyMt5 ? standardProfitBrl : currentCentsBrl;
   const valuation = (valuationBaseBrl || 0) + profitForValuation;
 
-  // Ajuste de Meta: Todos os progressos agora usam 1.000.000 como meta (evitando negativos no "Restam")
-  const goalValue = 1000000;
+  // Ajuste de Meta: Joey MT5 usa 10.000 como meta, os outros continuam com 1.000.000
+  const goalValue = isJoeyMt5 ? 10000 : 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
   const remaining = goalValue - currentBalanceUsd;
 
