@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'firebase/app';
+import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { DashboardState } from '../types';
 
@@ -14,21 +14,25 @@ const firebaseConfig = {
 let db: Firestore | null = null;
 let initError: string | null = null;
 
-try {
-  // Ensure we don't initialize multiple times and handle potential service availability issues
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = getFirestore(app);
-} catch (e: any) {
-  console.error("Erro fatal ao inicializar Firebase:", e);
-  initError = e.message || "Erro desconhecido ao inicializar o Firestore.";
-}
+const initFirestore = (): Firestore | null => {
+  try {
+    const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    return getFirestore(app);
+  } catch (e: any) {
+    console.error("Erro fatal ao inicializar Firebase:", e);
+    initError = e.message || "Erro desconhecido ao inicializar o Firestore.";
+    return null;
+  }
+};
+
+db = initFirestore();
 
 export { db, initError };
 
 export async function saveDashboardState(state: DashboardState): Promise<void> {
   if (!db) {
-    console.error("Firestore não disponível.");
-    throw new Error("Serviço de banco de dados não disponível no momento.");
+    db = initFirestore();
+    if (!db) throw new Error("Firestore não disponível.");
   }
   
   try {
@@ -42,24 +46,32 @@ export async function saveDashboardState(state: DashboardState): Promise<void> {
 
 export function subscribeToDashboardState(callback: (state: DashboardState) => void): () => void {
   if (!db) {
-    console.warn("Firebase não inicializado, subscrição cancelada.");
-    return () => {};
+    db = initFirestore();
+    if (!db) {
+      console.warn("Firebase não inicializado, subscrição cancelada.");
+      return () => {};
+    }
   }
 
-  const unsubscribe = onSnapshot(
-    doc(db, 'jar_state', 'global'),
-    (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as DashboardState;
-        callback(data);
-      } else {
-        console.log("Nenhum documento encontrado no Firebase.");
+  try {
+    const unsubscribe = onSnapshot(
+      doc(db, 'jar_state', 'global'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as DashboardState;
+          callback(data);
+        } else {
+          console.log("Nenhum documento encontrado no Firebase.");
+        }
+      },
+      (error) => {
+        console.error("Erro na subscrição do DashboardState:", error);
       }
-    },
-    (error) => {
-      console.error("Erro na subscrição do DashboardState:", error);
-    }
-  );
+    );
 
-  return unsubscribe;
+    return unsubscribe;
+  } catch (err) {
+    console.error("Falha ao criar listener do Firestore:", err);
+    return () => {};
+  }
 }

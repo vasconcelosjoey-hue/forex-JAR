@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { Roadmap } from './views/Roadmap';
@@ -91,7 +90,7 @@ const App: React.FC = () => {
         if (!isNaN(bid)) {
             setAppState(prev => {
                 if (Math.abs(prev.dollarRate - bid) < 0.0001) return prev;
-                return { ...prev, dollarRate: bid };
+                return { ...prev, dollarRate: bid, lastUpdated: Date.now() };
             });
             setLastRateUpdate(Date.now());
         }
@@ -144,15 +143,13 @@ const App: React.FC = () => {
   }, [appState, handleSaveToCloud, missingConfig]);
 
 
-  const updateState = (updates: Partial<AppState>) => {
-    setAppState(prev => {
-        return { 
-            ...prev, 
-            ...updates,
-            lastUpdated: Date.now()
-        };
-    });
-  };
+  const updateState = useCallback((updates: Partial<AppState>) => {
+    setAppState(prev => ({ 
+        ...prev, 
+        ...updates,
+        lastUpdated: Date.now()
+    }));
+  }, []);
 
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp'>) => {
     const newTransaction: Transaction = {
@@ -160,11 +157,19 @@ const App: React.FC = () => {
       id: crypto.randomUUID(),
       timestamp: Date.now()
     };
-    updateState({ transactions: [...appState.transactions, newTransaction] });
+    setAppState(prev => ({
+        ...prev,
+        transactions: [...prev.transactions, newTransaction],
+        lastUpdated: Date.now()
+    }));
   };
 
   const deleteTransaction = (id: string) => {
-    updateState({ transactions: appState.transactions.filter(t => t.id !== id) });
+    setAppState(prev => ({
+        ...prev,
+        transactions: prev.transactions.filter(t => t.id !== id),
+        lastUpdated: Date.now()
+    }));
   };
 
   const setDollarRate = (rate: number) => {
@@ -215,12 +220,13 @@ const App: React.FC = () => {
               <div className="bg-[#111] border-2 border-white/20 p-6 max-w-xl text-left">
                   <p className="text-white mb-4">O app não conseguiu inicializar o Firebase.</p>
                   <p className="text-xs text-neutral-500">{initError}</p>
+                  <button onClick={() => window.location.reload()} className="mt-6 w-full py-3 bg-[#FF6F00] text-black font-black uppercase tracking-widest hover:bg-white transition-all">RECARREGAR</button>
               </div>
           </div>
       );
   }
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#FF6F00] font-black animate-pulse">LOADING J.A.R. SYSTEM...</div>;
+  if (!isLoaded) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#FF6F00] font-black animate-pulse font-mono uppercase tracking-[0.5em]">LOADING J.A.R. SYSTEM...</div>;
 
   return (
     <>
@@ -256,18 +262,21 @@ const App: React.FC = () => {
                 valuationBaseBrl={appState.valuationBaseBrl}
                 additionalDepositDraft={appState.drafts.progress.additionalDeposit}
                 onUpdate={(upds) => {
-                    const mapped: any = { ...upds };
-                    if (upds.additionalDeposit !== undefined) {
-                        updateState({
-                            ...mapped,
-                            drafts: {
-                                ...appState.drafts,
-                                progress: { ...appState.drafts.progress, additionalDeposit: upds.additionalDeposit }
-                            }
-                        });
-                    } else {
-                        updateState(mapped);
-                    }
+                    setAppState(prev => {
+                        const mapped: any = { ...upds };
+                        if (upds.additionalDeposit !== undefined) {
+                            return {
+                                ...prev,
+                                ...mapped,
+                                lastUpdated: Date.now(),
+                                drafts: {
+                                    ...prev.drafts,
+                                    progress: { ...prev.drafts.progress, additionalDeposit: upds.additionalDeposit }
+                                }
+                            };
+                        }
+                        return { ...prev, ...mapped, lastUpdated: Date.now() };
+                    });
                 }}
             />
         )}
@@ -283,25 +292,28 @@ const App: React.FC = () => {
                 valuationBaseBrl={appState.valuationBaseBrl_jm}
                 additionalDepositDraft={appState.drafts.progress_jm.additionalDeposit}
                 onUpdate={(upds) => {
-                    const mapped: any = {};
-                    if (upds.startDate) mapped.startDate_jm = upds.startDate;
-                    if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_jm = upds.startDepositUsd;
-                    if (upds.currentDate) mapped.currentDate_jm = upds.currentDate;
-                    if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_jm = upds.currentBalanceUsd;
-                    if (upds.dailyHistory) mapped.dailyHistory_jm = upds.dailyHistory;
-                    if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_jm = upds.valuationBaseBrl;
-                    
-                    if (upds.additionalDeposit !== undefined) {
-                        updateState({
-                            ...mapped,
-                            drafts: {
-                                ...appState.drafts,
-                                progress_jm: { ...appState.drafts.progress_jm, additionalDeposit: upds.additionalDeposit }
-                            }
-                        });
-                    } else {
-                        updateState(mapped);
-                    }
+                    setAppState(prev => {
+                        const mapped: any = {};
+                        if (upds.startDate) mapped.startDate_jm = upds.startDate;
+                        if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_jm = upds.startDepositUsd;
+                        if (upds.currentDate) mapped.currentDate_jm = upds.currentDate;
+                        if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_jm = upds.currentBalanceUsd;
+                        if (upds.dailyHistory) mapped.dailyHistory_jm = upds.dailyHistory;
+                        if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_jm = upds.valuationBaseBrl;
+                        
+                        if (upds.additionalDeposit !== undefined) {
+                            return {
+                                ...prev,
+                                ...mapped,
+                                lastUpdated: Date.now(),
+                                drafts: {
+                                    ...prev.drafts,
+                                    progress_jm: { ...prev.drafts.progress_jm, additionalDeposit: upds.additionalDeposit }
+                                }
+                            };
+                        }
+                        return { ...prev, ...mapped, lastUpdated: Date.now() };
+                    });
                 }}
             />
         )}
@@ -317,25 +329,28 @@ const App: React.FC = () => {
                 valuationBaseBrl={appState.valuationBaseBrl_j200}
                 additionalDepositDraft={appState.drafts.progress_j200.additionalDeposit}
                 onUpdate={(upds) => {
-                    const mapped: any = {};
-                    if (upds.startDate) mapped.startDate_j200 = upds.startDate;
-                    if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_j200 = upds.startDepositUsd;
-                    if (upds.currentDate) mapped.currentDate_j200 = upds.currentDate;
-                    if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_j200 = upds.currentBalanceUsd;
-                    if (upds.dailyHistory) mapped.dailyHistory_j200 = upds.dailyHistory;
-                    if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_j200 = upds.valuationBaseBrl;
-                    
-                    if (upds.additionalDeposit !== undefined) {
-                        updateState({
-                            ...mapped,
-                            drafts: {
-                                ...appState.drafts,
-                                progress_j200: { ...appState.drafts.progress_j200, additionalDeposit: upds.additionalDeposit }
-                            }
-                        });
-                    } else {
-                        updateState(mapped);
-                    }
+                    setAppState(prev => {
+                        const mapped: any = {};
+                        if (upds.startDate) mapped.startDate_j200 = upds.startDate;
+                        if (upds.startDepositUsd !== undefined) mapped.startDepositUsd_j200 = upds.startDepositUsd;
+                        if (upds.currentDate) mapped.currentDate_j200 = upds.currentDate;
+                        if (upds.currentBalanceUsd !== undefined) mapped.currentBalanceUsd_j200 = upds.currentBalanceUsd;
+                        if (upds.dailyHistory) mapped.dailyHistory_j200 = upds.dailyHistory;
+                        if (upds.valuationBaseBrl !== undefined) mapped.valuationBaseBrl_j200 = upds.valuationBaseBrl;
+                        
+                        if (upds.additionalDeposit !== undefined) {
+                            return {
+                                ...prev,
+                                ...mapped,
+                                lastUpdated: Date.now(),
+                                drafts: {
+                                    ...prev.drafts,
+                                    progress_j200: { ...prev.drafts.progress_j200, additionalDeposit: upds.additionalDeposit }
+                                }
+                            };
+                        }
+                        return { ...prev, ...mapped, lastUpdated: Date.now() };
+                    });
                 }}
             />
         )}
