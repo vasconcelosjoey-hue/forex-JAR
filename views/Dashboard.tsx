@@ -52,13 +52,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
       }));
   }, [state.dailyHistory]);
 
+  const formatBRL = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-mono">
       
       <div className="flex flex-col md:flex-row justify-between items-end border-b-4 border-white/10 pb-6 bg-[#0a0a0a] p-6 md:p-8 shadow-[6px_6px_0px_0px_white]">
           <div>
-              <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none mb-2 text-white flex items-center gap-4">
-                <Activity size={36} style={{ color: neonHex }} className="animate-pulse" />
+              <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter leading-none mb-2 text-white flex items-center gap-4">
+                <Activity size={36} style={{ color: neonHex }} className="animate-pulse hidden sm:block" />
                 VISÃO GERAL
               </h2>
               <p className="font-mono text-[10px] md:text-xs text-white/50 font-black uppercase tracking-[0.3em] border-l-2 border-current pl-3">
@@ -78,10 +80,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
           </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <KpiCard 
              label="Lucro Consolidado" 
-             value={`R$ ${totalProfitBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+             value={`R$ ${formatBRL(totalProfitBrl)}`}
              subValue="3 Carteiras"
              icon={<Wallet size={20} />}
              color={activeNeon}
@@ -89,7 +91,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
           />
           <KpiCard 
              label="Melhor Média" 
-             value={`R$ ${Math.max(jarStats.dailyAvgBrl, jmStats.dailyAvgBrl, j200Stats.dailyAvgBrl).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+             value={`R$ ${formatBRL(Math.max(jarStats.dailyAvgBrl, jmStats.dailyAvgBrl, j200Stats.dailyAvgBrl))}`}
              subValue="Pico"
              icon={<TrendingUp size={20} />}
              color="white"
@@ -159,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222" />
                         <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 11, fontFamily: 'Space Mono', fontWeight: 'bold' }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 11, fontFamily: 'Space Mono', fontWeight: 'bold' }} tickFormatter={(val) => `R$ ${(val/1000).toFixed(0)}k`} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 11, fontFamily: 'Space Mono', fontWeight: 'bold' }} tickFormatter={(val) => `R$ ${(val/1000).toFixed(1)}k`} />
                         <Tooltip contentStyle={{ backgroundColor: '#000', border: `3px solid ${neonHex}`, borderRadius: 0 }} itemStyle={{ color: '#fff', fontFamily: 'Space Mono', fontWeight: '900', fontSize: '13px' }} labelStyle={{ color: neonHex, fontWeight: '900', marginBottom: '8px', fontSize: '14px', textTransform: 'uppercase' }} />
                         <Area type="monotone" dataKey="centsBrl" stroke={neonHex} strokeWidth={4} fillOpacity={1} fill="url(#colorGradient)" />
                     </AreaChart>
@@ -176,13 +178,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
 const AccountSummary = ({ stats, icon, color, history, isOpen, onToggle }: any) => (
     <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-            <div className="bg-black border-2 border-white/10 p-3 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.05)]">
+            <div className="bg-black border-2 border-white/10 p-3 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.05)] overflow-hidden">
                 <p className="text-[9px] text-white/40 uppercase font-black mb-1 tracking-widest">LUCRO BRL</p>
-                <p className="text-xl font-black leading-none" style={{ color }}>R$ {stats.profitBrl.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                <p className="text-lg font-black leading-none break-all" style={{ color }}>R$ {stats.profitBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
-            <div className="bg-black border-2 border-white/10 p-3 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.05)]">
+            <div className="bg-black border-2 border-white/10 p-3 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.05)] overflow-hidden">
                 <p className="text-[9px] text-white/40 uppercase font-black mb-1 tracking-widest">ROI</p>
-                <p className="text-xl font-black text-white leading-none">{stats.roi.toFixed(1)}%</p>
+                <p className="text-lg font-black text-white leading-none">{stats.roi.toFixed(2)}%</p>
             </div>
         </div>
         
@@ -197,7 +199,7 @@ const AccountSummary = ({ stats, icon, color, history, isOpen, onToggle }: any) 
             
             {isOpen && (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    <table className="w-full text-[10px] md:text-[11px] font-mono border-collapse">
+                    <table className="w-full text-[10px] md:text-[11px] font-mono border-collapse min-w-[200px]">
                         <thead className="text-white/40 border-b border-white/10 uppercase">
                             <tr>
                                 <th className="text-left pb-2 font-black">Data</th>
@@ -209,8 +211,8 @@ const AccountSummary = ({ stats, icon, color, history, isOpen, onToggle }: any) 
                             {history.map((h: any, i: number) => (
                                 <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/5">
                                     <td className="py-2 text-white/60">{new Date(h.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
-                                    <td className="py-2 text-right font-bold text-white">$ {h.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                    <td className="py-2 text-right font-black" style={{ color: color }}>R$ {h.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>
+                                    <td className="py-2 text-right font-bold text-white">$ {h.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td className="py-2 text-right font-black" style={{ color: color }}>R$ {h.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -223,8 +225,8 @@ const AccountSummary = ({ stats, icon, color, history, isOpen, onToggle }: any) 
                     {history.slice(0, 3).map((h: any, i: number) => (
                         <div key={i} className="flex justify-between items-center text-[10px] font-mono border-b border-white/5 pb-2 last:border-0">
                             <span className="text-white/40 font-black">{new Date(h.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
-                            <span className="font-bold text-white">$ {h.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            <span className="font-black" style={{ color: color }}>R$ {h.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                            <span className="font-bold text-white">$ {h.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="font-black" style={{ color: color }}>R$ {h.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     ))}
                 </div>
@@ -236,12 +238,12 @@ const AccountSummary = ({ stats, icon, color, history, isOpen, onToggle }: any) 
 const KpiCard = ({ label, value, subValue, icon, color, neonColor }: any) => {
     const isNeon = color === neonColor;
     return (
-        <div className="p-6 bg-[#000] border-2 border-white/10 relative group hover:border-white transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.05)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none" style={{ borderColor: isNeon ? neonColor : '' }}>
+        <div className="p-6 bg-[#000] border-2 border-white/10 relative group hover:border-white transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.05)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none overflow-hidden" style={{ borderColor: isNeon ? neonColor : '' }}>
             <div className="flex justify-between items-start mb-4 opacity-80">
                 <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/70 leading-tight">{label}</span>
                 <div style={{ color: isNeon ? neonColor : 'white' }}>{icon}</div>
             </div>
-            <div className="text-2xl md:text-3xl font-black tracking-tighter mb-2 font-sans leading-none" style={{ color: isNeon ? neonColor : 'white' }}>
+            <div className="text-xl sm:text-2xl md:text-3xl font-black tracking-tighter mb-2 font-mono leading-none break-all" style={{ color: isNeon ? neonColor : 'white' }}>
                 {value}
             </div>
             <div className="text-[9px] font-mono font-black text-white/40 border-l-2 border-white/20 pl-2 uppercase tracking-widest">

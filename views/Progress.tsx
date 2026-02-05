@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo } from 'react';
 import { DailyRecord } from '../types';
 import { Card } from '../components/ui/Card';
@@ -44,12 +43,11 @@ export const Progress: React.FC<ProgressProps> = ({
   
   const captureRef = useRef<HTMLDivElement>(null);
 
-  // Lógica de Dias Úteis (Segunda a Sexta)
   const businessDays = useMemo(() => {
-    if (!startDate || !currentDate) return 0;
+    if (!startDate || !currentDate) return 1;
     const start = new Date(startDate);
     const end = new Date(currentDate);
-    if (start > end) return 0;
+    if (start > end) return 1;
     
     let count = 0;
     const cur = new Date(start);
@@ -73,10 +71,8 @@ export const Progress: React.FC<ProgressProps> = ({
   const currentCentsBrl = calculateCentsBrl(currentBalanceUsd, dollarRate);
   const standardProfitBrl = totalGrowthUsd * dollarRate;
   
-  // Lógica condicional: Se for JOEY MT5, Valuation e BRL Diário usam Lucro Standard.
   const isJoeyMt5 = title.includes('JOEY MT5');
   
-  // No Joey MT5, a média diária é calculada sobre o Standard Profit BRL
   const dailyAvgBrl = isJoeyMt5 
     ? standardProfitBrl / businessDays 
     : currentCentsBrl / businessDays;
@@ -84,7 +80,6 @@ export const Progress: React.FC<ProgressProps> = ({
   const profitForValuation = isJoeyMt5 ? standardProfitBrl : currentCentsBrl;
   const valuation = (valuationBaseBrl || 0) + profitForValuation;
 
-  // Ajuste de Meta: Joey MT5 usa 10.000 como meta, os outros continuam com 1.000.000
   const goalValue = isJoeyMt5 ? 10000 : 1000000;
   const goalProgress = Math.min((currentBalanceUsd / goalValue) * 100, 100);
   const remaining = goalValue - currentBalanceUsd;
@@ -96,8 +91,7 @@ export const Progress: React.FC<ProgressProps> = ({
         const blob = await toBlob(captureRef.current, { 
             backgroundColor: '#050505', 
             quality: 1, 
-            pixelRatio: 3,
-            style: { transform: 'scale(1)' }
+            pixelRatio: 3
         });
         if (blob) {
             const data = [new ClipboardItem({ 'image/png': blob })];
@@ -124,22 +118,21 @@ export const Progress: React.FC<ProgressProps> = ({
 
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return '---';
-    const [year, month, day] = dateStr.split('-');
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [year, month, day] = parts;
     return `${day}/${month}/${year.slice(2)}`;
   };
 
   const handleRegisterDay = () => {
       const existingIndex = (dailyHistory || []).findIndex(r => r.date === currentDate);
       const proceed = () => {
-          // No Joey MT5, registramos o Standard Profit BRL (USD Profit * Rate)
-          // Nos outros (JAR, 10K), registramos o Cents BRL (USD Profit / 100 * Rate)
           const profitToRecord = isJoeyMt5 ? standardProfitBrl : calculateCentsBrl(currentBalanceUsd, dollarRate);
-
           const newRecord: DailyRecord = {
               date: currentDate,
               balanceUsd: currentBalanceUsd,
               rate: dollarRate,
-              centsBrl: profitToRecord, // Reutilizando o campo centsBrl para armazenar o valor correto para o tab
+              centsBrl: profitToRecord, 
               investedUsd: startDepositUsd
           };
           let newHistory = [...(dailyHistory || [])];
@@ -161,11 +154,13 @@ export const Progress: React.FC<ProgressProps> = ({
       } else proceed();
   };
 
-  // Handler para o input inteligente de Capital BRL
   const handleValuationBaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrencyInput(e.target.value, 2);
     onUpdate({ valuationBaseBrl: parseCurrency(formatted) });
   };
+
+  const formatBRL = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatUSD = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div className="flex flex-col gap-4 font-mono pb-10 overflow-x-hidden animate-in fade-in duration-300">
@@ -179,40 +174,36 @@ export const Progress: React.FC<ProgressProps> = ({
        />
 
        <div ref={captureRef} className="flex flex-col gap-4 p-1">
-           {/* HEADER: NOMES + VALUATION + INPUT APORTE INTELIGENTE */}
            <div className="flex flex-col md:flex-row items-center justify-between border-b-4 border-white/10 pb-4 gap-4">
-               <div className="flex flex-col md:flex-row items-center gap-4">
+               <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                    <div className="flex items-center gap-3">
                        <div className="w-5 h-5 bg-[#00e676] shadow-[2px_2px_0px_0px_white]"></div>
-                       <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">{title}</h2>
+                       <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter whitespace-nowrap">{title}</h2>
                    </div>
                    
-                   <div className="flex items-center gap-4 border-l-2 border-white/20 pl-4 py-1">
-                       {/* Input Inteligente CAPITAL BRL */}
-                       <div className="flex flex-col">
+                   <div className="flex items-center gap-4 border-l-0 md:border-l-2 border-white/20 pl-0 md:pl-4 py-1 w-full md:w-auto overflow-x-auto md:overflow-visible">
+                       <div className="flex flex-col min-w-max">
                            <span className="text-[10px] text-white/50 uppercase font-black tracking-widest mb-1">CAPITAL BRL</span>
                            <div className="relative group">
                                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-neutral-600 font-bold pointer-events-none">R$</span>
                                <input 
                                   type="tel"
-                                  className="bg-transparent border-b-2 border-[#00e676] pl-6 pr-2 py-1 text-base md:text-xl font-black text-[#00e676] focus:outline-none transition-all w-32 md:w-40"
+                                  className="bg-transparent border-b-2 border-[#00e676] pl-6 pr-2 py-1 text-base md:text-xl font-black text-[#00e676] focus:outline-none transition-all w-full max-w-[200px]"
                                   placeholder="0,00"
                                   value={valuationBaseBrl === 0 ? '' : formatCurrencyDisplay(valuationBaseBrl, 2)}
                                   onChange={handleValuationBaseChange}
                                />
                            </div>
                        </div>
-
-                       <div className="h-10 w-[2px] bg-white/10 mx-2"></div>
-
-                       <div>
+                       <div className="h-10 w-[2px] bg-white/10 mx-2 flex-shrink-0"></div>
+                       <div className="min-w-max">
                            <span className="block text-[10px] text-white/50 uppercase font-black tracking-widest mb-1">VALUATION</span>
-                           <span className="text-xl md:text-2xl font-black text-[#00e676]">R$ {valuation.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                           <span className="text-xl md:text-2xl font-black text-[#00e676]">R$ {formatBRL(valuation)}</span>
                        </div>
                    </div>
                </div>
                
-               <div className="flex gap-2">
+               <div className="flex gap-2 flex-shrink-0">
                    <button onClick={handleCopyAsImage} className="p-2 border-2 border-[#00e676] text-[#00e676] hover:bg-[#00e676] hover:text-black transition-all">
                        {copyStatus === 'copying' ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                    </button>
@@ -222,9 +213,8 @@ export const Progress: React.FC<ProgressProps> = ({
                </div>
            </div>
 
-           {/* INPUTS ROW + REGISTRAR DIA */}
            <Card className="!p-4" color="success">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
                     <Input label="Início" type="date" variant="success" value={startDate} onChange={(e) => onUpdate({ startDate: e.target.value })} />
                     <Input label="Cap. (USD)" mask="currency" prefix="$" variant="success" value={startDepositUsd} onChange={(e) => onUpdate({ startDepositUsd: parseCurrency(e.target.value) })} />
                     <Input label="Aporte" mask="currency" prefix="$" variant="success" value={additionalDepositDraft || ''} onChange={(e) => onUpdate({ additionalDeposit: e.target.value })} actionButton={
@@ -232,31 +222,30 @@ export const Progress: React.FC<ProgressProps> = ({
                     }/>
                     <Input label="Hoje" type="date" variant="success" value={currentDate} onChange={(e) => onUpdate({ currentDate: e.target.value })} />
                     <Input label="Saldo (USD)" mask="currency" prefix="$" variant="success" className="text-[#00e676]" value={currentBalanceUsd} onChange={(e) => onUpdate({ currentBalanceUsd: parseCurrency(e.target.value) })} onKeyDown={(e) => e.key === 'Enter' && handleRegisterDay()} />
-                    <button onClick={handleRegisterDay} className="h-[52px] md:h-[64px] bg-[#00e676] text-black font-black uppercase text-[11px] md:text-xs flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_white] active:translate-y-1 active:shadow-none transition-all border-none">
+                    <button onClick={handleRegisterDay} className="h-[52px] lg:h-[64px] bg-[#00e676] text-black font-black uppercase text-[11px] flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_white] active:translate-y-1 active:shadow-none transition-all border-none">
                         <Save size={18} /> REGISTRAR DIA
                     </button>
                 </div>
            </Card>
 
-           {/* MAIN METRICS INTEGRATED */}
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                <div className="lg:col-span-5 relative border-4 border-white bg-black p-4 md:p-5 flex flex-col justify-center shadow-[6px_6px_0px_0px_#00e676]">
+                <div className="lg:col-span-5 relative border-4 border-white bg-black p-4 md:p-5 flex flex-col justify-center shadow-[6px_6px_0px_0px_#00e676] overflow-hidden">
                     <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-                        <div className="text-center md:text-left">
+                        <div className="text-center md:text-left w-full overflow-hidden">
                              <div className="text-[9px] uppercase font-black text-white tracking-[0.3em] mb-1 flex items-center justify-center md:justify-start gap-2">
                                 <Target size={14} className="text-[#00e676]" /> SALDO ATUAL
                              </div>
-                             <div className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-none">
+                             <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-none break-all sm:break-normal">
                                 <span className="text-[#00e676] text-sm align-top mr-1 font-mono opacity-80">$</span>
-                                {currentBalanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                {formatUSD(currentBalanceUsd)}
                              </div>
                         </div>
-                        <div className="flex flex-col items-center md:items-end gap-1">
-                            <span className="text-lg md:text-2xl font-black text-[#00e676]">{goalProgress.toFixed(1)}%</span>
+                        <div className="flex flex-col items-center md:items-end gap-1 flex-shrink-0">
+                            <span className="text-lg md:text-2xl font-black text-[#00e676]">{goalProgress.toFixed(2)}%</span>
                             <div className="w-32 md:w-40 h-1.5 bg-[#111] border border-white/20 overflow-hidden">
                                 <div className="h-full bg-[#00e676] transition-all duration-700" style={{ width: `${goalProgress}%` }}></div>
                             </div>
-                            <span className="text-[12px] md:text-[13px] text-white/50 uppercase font-bold tracking-[0.1em] mt-1 leading-none text-center md:text-right w-full">Restam $ {remaining.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                            <span className="text-[10px] md:text-[12px] text-white/50 uppercase font-bold tracking-[0.1em] mt-1 leading-none text-center md:text-right w-full">Restam $ {formatUSD(remaining)}</span>
                         </div>
                     </div>
                 </div>
@@ -265,14 +254,14 @@ export const Progress: React.FC<ProgressProps> = ({
                     <StatsCard label="Dias Úteis" value={businessDays.toString()} color="success" />
                     <StatsCard label="Aumento Patrimonial" value={`${growthPercentage.toFixed(2)}%`} color={growthPercentage >= 0 ? 'success' : 'danger'} />
                     <StatsCard label="Média Diária %" value={`${dailyYieldPercent.toFixed(2)}%`} color="gold" labelColor="gold" />
-                    <StatsCard label="Lucro USD" value={`$ ${totalGrowthUsd.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="white" />
+                    <StatsCard label="Lucro USD" value={`$ ${formatUSD(totalGrowthUsd)}`} color="white" />
                 </div>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <StatsCard label="Lucro Standard" value={`R$ ${standardProfitBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
-                <StatsCard label="Lucro BRL Real" value={`R$ ${currentCentsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="black" variant="highlight" />
-                <StatsCard label="BRL Diário" value={`R$ ${dailyAvgBrl.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`} color="purple" labelColor="purple" />
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <StatsCard label="Lucro Standard" value={`R$ ${formatBRL(standardProfitBrl)}`} color="black" variant="highlight" />
+                <StatsCard label="Lucro BRL Real" value={`R$ ${formatBRL(currentCentsBrl)}`} color="black" variant="highlight" />
+                <StatsCard label="BRL Diário" value={`R$ ${formatBRL(dailyAvgBrl)}`} color="purple" labelColor="purple" />
            </div>
        </div>
 
@@ -283,7 +272,7 @@ export const Progress: React.FC<ProgressProps> = ({
             </button>
             {isHistoryOpen && (
                 <div className="overflow-x-auto max-h-52 overflow-y-auto">
-                    <table className="w-full text-left border-collapse min-w-[600px]">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead className="bg-[#050505] text-[10px] uppercase text-white font-black border-b border-white/10">
                             <tr>
                                 <th className="py-3 px-6">Data</th>
@@ -300,10 +289,10 @@ export const Progress: React.FC<ProgressProps> = ({
                                 return (
                                     <tr key={record.date} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                         <td className="py-3 px-6 opacity-50 font-bold">{formatDateDisplay(record.date)}</td>
-                                        <td className="py-3 px-6 font-black text-white">$ {record.balanceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                        <td className="py-3 px-6 text-right font-black text-[#00e676]">R$ {record.centsBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                        <td className="py-3 px-6 font-black text-white">$ {formatUSD(record.balanceUsd)}</td>
+                                        <td className="py-3 px-6 text-right font-black text-[#00e676]">R$ {formatBRL(record.centsBrl)}</td>
                                         <td className={`py-3 px-6 text-right font-black ${diff >= 0 ? 'text-[#00e676]' : 'text-[#ff4444]'}`}>
-                                             {diff > 0 ? '+' : ''}{diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                             {diff > 0 ? '+' : ''}{formatBRL(diff)}
                                         </td>
                                         <td className="py-3 px-3 text-center">
                                             <button onClick={() => { if(confirm("Apagar?")) onUpdate({ dailyHistory: dailyHistory.filter(r => r.date !== record.date) }); }} className="text-white/20 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
@@ -339,16 +328,16 @@ const StatsCard = ({ label, value, color = 'default', variant = 'default', label
     };
     
     if (variant === 'highlight') return (
-        <div className="flex flex-col justify-center min-h-[90px] bg-[#00e676] border-2 border-white/20 p-5 shadow-[5px_5px_0px_0px_white]">
-            <span className={`text-[12px] uppercase font-black ${labelColors['black']} leading-tight mb-1 tracking-wider`}>{label}</span>
-            <div className="text-2xl md:text-3xl lg:text-4xl font-black text-black leading-none truncate">{value}</div>
+        <div className="flex flex-col justify-center min-h-[90px] bg-[#00e676] border-2 border-white/20 p-4 md:p-5 shadow-[5px_5px_0px_0px_white] overflow-hidden">
+            <span className={`text-[10px] sm:text-[12px] uppercase font-black ${labelColors['black'] || 'text-black'} leading-tight mb-1 tracking-wider`}>{label}</span>
+            <div className="text-xl sm:text-2xl md:text-3xl font-black text-black leading-none break-all">{value}</div>
         </div>
     );
     
     return (
-        <div className="flex flex-col justify-center min-h-[90px] bg-[#111] border-2 border-white/10 p-5 shadow-[5px_5px_0px_0px_rgba(255,255,255,0.05)]">
-            <span className={`text-[12px] uppercase font-black ${labelColors[labelColor] || 'text-white'} leading-tight mb-1 tracking-wider`}>{label}</span>
-            <div className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none truncate ${colors[color]}`}>{value}</div>
+        <div className="flex flex-col justify-center min-h-[90px] bg-[#111] border-2 border-white/10 p-4 md:p-5 shadow-[5px_5px_0px_0px_rgba(255,255,255,0.05)] overflow-hidden">
+            <span className={`text-[10px] sm:text-[12px] uppercase font-black ${labelColors[labelColor] || 'text-white'} leading-tight mb-1 tracking-wider`}>{label}</span>
+            <div className={`text-xl sm:text-2xl md:text-3xl font-black leading-none break-all ${colors[color] || 'text-white'}`}>{value}</div>
         </div>
     );
 };

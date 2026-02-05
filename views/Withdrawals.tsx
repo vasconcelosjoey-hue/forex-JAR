@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppState, Transaction, PartnerName } from '../types';
 import { Card } from '../components/ui/Card';
@@ -84,14 +85,14 @@ export const Withdrawals: React.FC<WithdrawalsProps> = ({ state, addTransaction,
         .reduce((acc, t) => acc + t.amountBrl, 0);
   };
 
-  const themeColor = '#ffd700'; // Yellow Theme
+  const formatBRL = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div className="space-y-8 font-mono">
       
       {/* Yellow Calculator Section */}
       <Card title="CALCULADORA DE RETIRADA" color="warning">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
             <Input 
                 label="Valor Bruto (R$)" 
                 prefix="R$"
@@ -118,29 +119,29 @@ export const Withdrawals: React.FC<WithdrawalsProps> = ({ state, addTransaction,
          </div>
          
          {/* Results */}
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border-2 border-[#ffd700] bg-[#ffd700]/10">
-             <div className="text-center p-4 border-r-2 border-[#ffd700]/50">
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-0 border-2 border-[#ffd700] bg-[#ffd700]/10 overflow-hidden">
+             <div className="text-center p-4 border-b sm:border-b-0 sm:border-r-2 border-[#ffd700]/50 overflow-hidden">
                  <p className="text-[10px] text-[#ffd700] uppercase font-bold mb-1">Imposto</p>
-                 <p className="text-xl font-bold text-white">R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                 <p className="text-lg font-bold text-white break-all">R$ {formatBRL(taxAmount)}</p>
              </div>
-             <div className="text-center p-4 border-r-2 border-[#ffd700]/50">
+             <div className="text-center p-4 border-b sm:border-b-0 sm:border-r-2 border-[#ffd700]/50 overflow-hidden">
                  <p className="text-[10px] text-white uppercase font-bold mb-1">Líquido</p>
-                 <p className="text-xl font-black text-white">R$ {netAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                 <p className="text-lg font-black text-white break-all">R$ {formatBRL(netAmount)}</p>
              </div>
-             <div className="text-center p-4 border-r-2 border-[#ffd700]/50">
+             <div className="text-center p-4 border-b sm:border-b-0 sm:border-r-2 border-[#ffd700]/50 overflow-hidden">
                  <p className="text-[10px] text-[#ffd700] uppercase font-bold mb-1">Por Pessoa</p>
-                 <p className="text-xl font-black text-white">R$ {perPerson.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                 <p className="text-lg font-black text-white break-all">R$ {formatBRL(perPerson)}</p>
              </div>
-             <div className="text-center p-4 bg-[#ffd700] text-black">
+             <div className="text-center p-4 bg-[#ffd700] text-black overflow-hidden">
                  <p className="text-[10px] uppercase font-bold mb-1 border-b border-black/20 pb-1">Débito Wallet</p>
-                 <p className="text-lg font-mono font-bold">-{Math.floor(centsToDebit).toLocaleString('pt-BR')} c</p>
+                 <p className="text-base font-mono font-bold break-all">-{Math.floor(centsToDebit).toLocaleString('pt-BR')} c</p>
              </div>
          </div>
       </Card>
 
       {/* Registration Section */}
       <Card title="REGISTRAR SAQUE">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
              {(['JOEY', 'ALEX', 'RUBINHO', 'TAX'] as PartnerName[]).map(partner => (
                  <div key={partner} className="flex flex-col">
                     <Input 
@@ -158,9 +159,9 @@ export const Withdrawals: React.FC<WithdrawalsProps> = ({ state, addTransaction,
                         }}
                         variant="warning"
                     />
-                    <div className="mt-2 text-[10px] font-bold text-neutral-500 border-l-2 border-[#ffd700] pl-2 flex justify-between">
+                    <div className="mt-2 text-[10px] font-bold text-neutral-500 border-l-2 border-[#ffd700] pl-2 flex justify-between overflow-hidden">
                         <span>TOTAL:</span>
-                        <span className="text-[#ffd700]">R$ {getPartnerWithdrawn(partner).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-[#ffd700] break-all">R$ {formatBRL(getPartnerWithdrawn(partner))}</span>
                     </div>
                  </div>
              ))}
@@ -177,7 +178,7 @@ export const Withdrawals: React.FC<WithdrawalsProps> = ({ state, addTransaction,
       {/* History */}
        <Card title="HISTÓRICO">
          <div className="max-h-60 overflow-y-auto pr-2">
-             <table className="w-full text-left border-collapse">
+             <table className="w-full text-left border-collapse min-w-[500px]">
                  <thead className="sticky top-0 bg-[#111] text-[10px] uppercase text-neutral-500 font-bold z-10 border-b-2 border-white/10">
                      <tr>
                          <th className="py-2">Data</th>
@@ -197,7 +198,7 @@ export const Withdrawals: React.FC<WithdrawalsProps> = ({ state, addTransaction,
                                  {new Date(t.date).toLocaleDateString('pt-BR')}
                              </td>
                              <td className="py-3 font-bold text-[#ffd700] group-hover:text-black">{t.partner}</td>
-                             <td className="py-3 text-right group-hover:font-bold">R$ {t.amountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                             <td className="py-3 text-right group-hover:font-bold">R$ {formatBRL(t.amountBrl)}</td>
                              <td className="py-3 text-right text-neutral-500 group-hover:text-black">-{Math.floor(t.amountCents).toLocaleString('pt-BR')}</td>
                              <td className="py-3 text-center">
                                  <button 

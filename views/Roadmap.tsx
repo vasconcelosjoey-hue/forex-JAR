@@ -56,6 +56,8 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
       .reduce((acc, t) => acc + t.amountBrl, 0);
   }, [state.transactions]);
 
+  const formatBRL = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
     <div className="flex flex-col gap-6 w-full font-mono pb-12 max-w-full overflow-hidden animate-in fade-in duration-300">
       
@@ -64,15 +66,15 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
         <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter">APORTES J.A.R.</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card title="TOTAL ACUMULADO" color="warning" className="flex flex-col justify-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card title="TOTAL ACUMULADO" color="warning" className="flex flex-col justify-center overflow-hidden">
             <div className="flex items-center gap-4">
-                <div className="p-3 bg-[#FF6F00] text-black rounded-none">
+                <div className="p-3 bg-[#FF6F00] text-black rounded-none flex-shrink-0">
                     <DollarSign size={24} />
                 </div>
-                <div>
-                    <p className="text-xl md:text-2xl font-black text-white leading-none">
-                        R$ {totalAportes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                <div className="overflow-hidden">
+                    <p className="text-xl md:text-2xl font-black text-white leading-none break-all">
+                        R$ {formatBRL(totalAportes)}
                     </p>
                     <p className="text-[10px] text-neutral-500 uppercase font-black tracking-[0.2em] mt-2">Volume Total Bruto</p>
                 </div>
@@ -111,7 +113,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
 
       <Card className="flex flex-col p-0 border-white/20 bg-[#000]" title="Log de Transações">
          <div className="w-full overflow-x-auto">
-             <table className="w-full text-left border-collapse min-w-[600px]">
+             <table className="w-full text-left border-collapse min-w-[700px]">
                  <thead className="bg-[#111] text-[11px] uppercase text-white/40 font-black border-b-2 border-white/10">
                      <tr>
                          <th className="py-4 px-6">Data Registro</th>
@@ -131,7 +133,7 @@ export const Roadmap: React.FC<RoadmapProps> = ({ state, addTransaction, deleteT
                                 {new Date(t.date).toLocaleDateString('pt-BR')}
                              </td>
                              <td className="py-4 px-6 uppercase font-black">{t.partner}</td>
-                             <td className="py-4 px-6 text-right text-[#FF6F00] group-hover:text-black font-black">R$ {t.amountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                             <td className="py-4 px-6 text-right text-[#FF6F00] group-hover:text-black font-black">R$ {formatBRL(t.amountBrl)}</td>
                              <td className="py-4 px-6 text-right opacity-40 group-hover:opacity-100 font-bold">{Math.floor(t.amountCents).toLocaleString('pt-BR')} c</td>
                              <td className="py-4 px-6 text-center">
                                  <button onClick={() => { if(confirm("Apagar registro?")) deleteTransaction(t.id); }} className="text-white/10 hover:text-[#ff4444] transition-colors p-2">

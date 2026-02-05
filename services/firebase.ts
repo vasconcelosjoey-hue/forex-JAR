@@ -2,7 +2,6 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, Firestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { DashboardState } from '../types';
 
-// Configuração direta para garantir funcionamento no deploy (Vercel)
 const firebaseConfig = {
   apiKey: "AIzaSyBYvMiwh4B3TE5sE_HzJ3-ryLKkG93pgXY",
   authDomain: "forex-jar.firebaseapp.com",
@@ -25,15 +24,10 @@ try {
 
 export { db, initError };
 
-/**
- * Salva o estado completo do dashboard no Firebase.
- * Isso inclui totais, histórico e, crucialmente, os inputs (drafts).
- */
 export async function saveDashboardState(state: DashboardState): Promise<void> {
   if (!db) throw new Error("Firebase não inicializado.");
   
   try {
-    // timestamp garante que sabemos qual é a versão mais recente
     const payload = { ...state, lastUpdated: Date.now() };
     await setDoc(doc(db, 'jar_state', 'global'), payload);
   } catch (error) {
@@ -42,10 +36,6 @@ export async function saveDashboardState(state: DashboardState): Promise<void> {
   }
 }
 
-/**
- * Inscreve-se para receber atualizações em tempo real do dashboard.
- * O callback será chamado sempre que QUALQUER dado mudar no servidor.
- */
 export function subscribeToDashboardState(callback: (state: DashboardState) => void): () => void {
   if (!db) {
     console.warn("Firebase não inicializado, subscrição cancelada.");
