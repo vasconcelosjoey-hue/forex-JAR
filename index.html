@@ -16,14 +16,13 @@
         background-color: #050505;
         color: #ffffff;
         margin: 0;
+        overflow-x: hidden;
       }
       h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; }
-      ::-webkit-scrollbar { width: 12px; height: 12px; background: #000; border-left: 1px solid #333; }
-      ::-webkit-scrollbar-track { background: #000; }
-      ::-webkit-scrollbar-thumb { background: #FF6F00; border: 2px solid #000; }
-      ::-webkit-scrollbar-thumb:hover { background: #fff; }
-      .hard-shadow { box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.1); }
-      .hard-shadow-orange { box-shadow: 4px 4px 0px 0px #FF6F00; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; background: #000; }
+      ::-webkit-scrollbar-thumb { background: #FF6F00; }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; }
     </style>
     <script type="importmap">
 {

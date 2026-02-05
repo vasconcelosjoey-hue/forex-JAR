@@ -310,7 +310,7 @@ export const Progress: React.FC<ProgressProps> = ({
 };
 
 const StatsCard = ({ label, value, color = 'default', variant = 'default', labelColor = 'white' }: any) => {
-    const colors: any = { 
+    const colors: Record<string, string> = { 
         default: 'text-white', 
         success: 'text-[#00e676]', 
         danger: 'text-[#ff4444]', 
@@ -320,7 +320,7 @@ const StatsCard = ({ label, value, color = 'default', variant = 'default', label
         black: 'text-black' 
     };
 
-    const labelColors: any = {
+    const labelColors: Record<string, string> = {
         white: 'text-white',
         gold: 'text-[#ffd700]',
         purple: 'text-[#d500f9]',
