@@ -28,7 +28,7 @@ const initFirestore = (): Firestore | null => {
   }
 };
 
-// Start initialization
+// Inicialização imediata
 initFirestore();
 
 export { db, initError };
