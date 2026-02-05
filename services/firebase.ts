@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, Firestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { DashboardState } from '../types';
 
@@ -15,17 +15,21 @@ let db: Firestore | null = null;
 let initError: string | null = null;
 
 try {
-  const app = initializeApp(firebaseConfig);
+  // Ensure we don't initialize multiple times and handle potential service availability issues
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(app);
 } catch (e: any) {
   console.error("Erro fatal ao inicializar Firebase:", e);
-  initError = e.message || JSON.stringify(e);
+  initError = e.message || "Erro desconhecido ao inicializar o Firestore.";
 }
 
 export { db, initError };
 
 export async function saveDashboardState(state: DashboardState): Promise<void> {
-  if (!db) throw new Error("Firebase não inicializado.");
+  if (!db) {
+    console.error("Firestore não disponível.");
+    throw new Error("Serviço de banco de dados não disponível no momento.");
+  }
   
   try {
     const payload = { ...state, lastUpdated: Date.now() };
