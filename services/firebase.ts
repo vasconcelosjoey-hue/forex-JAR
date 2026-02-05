@@ -15,9 +15,12 @@ let db: Firestore | null = null;
 let initError: string | null = null;
 
 const initFirestore = (): Firestore | null => {
+  if (db) return db;
   try {
-    const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    return getFirestore(app);
+    const apps = getApps();
+    const app: FirebaseApp = apps.length === 0 ? initializeApp(firebaseConfig) : getApp();
+    db = getFirestore(app);
+    return db;
   } catch (e: any) {
     console.error("Erro fatal ao inicializar Firebase:", e);
     initError = e.message || "Erro desconhecido ao inicializar o Firestore.";
@@ -25,19 +28,18 @@ const initFirestore = (): Firestore | null => {
   }
 };
 
-db = initFirestore();
+// Start initialization
+initFirestore();
 
 export { db, initError };
 
 export async function saveDashboardState(state: DashboardState): Promise<void> {
-  if (!db) {
-    db = initFirestore();
-    if (!db) throw new Error("Firestore não disponível.");
-  }
+  const instance = db || initFirestore();
+  if (!instance) throw new Error("Firestore não disponível.");
   
   try {
     const payload = { ...state, lastUpdated: Date.now() };
-    await setDoc(doc(db, 'jar_state', 'global'), payload);
+    await setDoc(doc(instance, 'jar_state', 'global'), payload);
   } catch (error) {
     console.error("Erro ao salvar DashboardState:", error);
     throw error;
@@ -45,17 +47,15 @@ export async function saveDashboardState(state: DashboardState): Promise<void> {
 }
 
 export function subscribeToDashboardState(callback: (state: DashboardState) => void): () => void {
-  if (!db) {
-    db = initFirestore();
-    if (!db) {
-      console.warn("Firebase não inicializado, subscrição cancelada.");
-      return () => {};
-    }
+  const instance = db || initFirestore();
+  if (!instance) {
+    console.warn("Firebase não inicializado, subscrição cancelada.");
+    return () => {};
   }
 
   try {
     const unsubscribe = onSnapshot(
-      doc(db, 'jar_state', 'global'),
+      doc(instance, 'jar_state', 'global'),
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as DashboardState;
