@@ -34,6 +34,7 @@ Este repositório agora possui workflow em `.github/workflows/vercel-deploy.yml`
 3. Faça push para `main` (ou `master`) para deploy de produção automático.
 4. Pull requests geram deploy de preview automático.
 5. Se o projeto estiver sem `package-lock.json`, o workflow instala dependências com `npm install` automaticamente.
+6. Em PRs vindas de fork, o deploy é ignorado automaticamente porque o GitHub não disponibiliza secrets de repositório nesse contexto.
 
 > Dica: `ORG_ID` e `PROJECT_ID` podem ser obtidos com `vercel link` (arquivo `.vercel/project.json`).
 

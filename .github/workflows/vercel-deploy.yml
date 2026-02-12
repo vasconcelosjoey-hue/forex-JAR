@@ -9,6 +9,7 @@ on:
 
 jobs:
   deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -97,3 +98,13 @@ jobs:
       - name: Deploy production
         if: github.event_name == 'push'
         run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+
+  skip-fork-pr:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip deploy for fork PR
+        run: |
+          echo "Pull request de fork detectado."
+          echo "GitHub não expõe repository secrets para PRs de fork, então o deploy Vercel foi ignorado neste run."
+          echo "Faça merge/sync em branch do repositório principal ou execute deploy no push para main/master."
