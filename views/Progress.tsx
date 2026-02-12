@@ -43,18 +43,39 @@ export const Progress: React.FC<ProgressProps> = ({
   
   const captureRef = useRef<HTMLDivElement>(null);
 
+  const parseDateToUtc = (value: string) => {
+    if (!value) return null;
+
+    const normalized = value.trim();
+    const isoMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    }
+
+    const brMatch = normalized.match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
+    if (brMatch) {
+      const [, day, month, yearRaw] = brMatch;
+      const year = yearRaw.length === 2 ? `20${yearRaw}` : yearRaw;
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    }
+
+    return null;
+  };
+
   const businessDays = useMemo(() => {
     if (!startDate || !currentDate) return 1;
-    const start = new Date(startDate);
-    const end = new Date(currentDate);
+    const start = parseDateToUtc(startDate);
+    const end = parseDateToUtc(currentDate);
+    if (!start || !end) return 1;
     if (start > end) return 1;
     
     let count = 0;
     const cur = new Date(start);
     while (cur <= end) {
-      const day = cur.getDay();
+      const day = cur.getUTCDay();
       if (day !== 0 && day !== 6) count++; 
-      cur.setDate(cur.getDate() + 1);
+      cur.setUTCDate(cur.getUTCDate() + 1);
     }
     return count || 1;
   }, [startDate, currentDate]);
