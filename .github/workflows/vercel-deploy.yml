@@ -1,0 +1,110 @@
+name: Vercel Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Vercel secrets
+        run: |
+          missing=0
+
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Secret VERCEL_TOKEN não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "::error::Secret VERCEL_ORG_ID não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Secret VERCEL_PROJECT_ID não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          # Evita erro comum: colar token (vcp_...) no lugar de ORG/PROJECT ID
+          if [ -n "$VERCEL_ORG_ID" ] && echo "$VERCEL_ORG_ID" | grep -q '^vcp_'; then
+            echo "::error::VERCEL_ORG_ID parece token (vcp_...). Use o orgId real (ex.: team_...) da Vercel."
+            missing=1
+          fi
+
+          if [ -n "$VERCEL_PROJECT_ID" ] && echo "$VERCEL_PROJECT_ID" | grep -q '^vcp_'; then
+            echo "::error::VERCEL_PROJECT_ID parece token (vcp_...). Use o projectId real (ex.: prj_...) da Vercel."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build app
+        run: npm run build
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull preview environment
+        if: github.event_name == 'pull_request'
+        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+
+      - name: Build preview artifacts
+        if: github.event_name == 'pull_request'
+        run: vercel build --token=$VERCEL_TOKEN
+
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        run: vercel deploy --prebuilt --token=$VERCEL_TOKEN
+
+      - name: Pull production environment
+        if: github.event_name == 'push'
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Build production artifacts
+        if: github.event_name == 'push'
+        run: vercel build --prod --token=$VERCEL_TOKEN
+
+      - name: Deploy production
+        if: github.event_name == 'push'
+        run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+
+  skip-fork-pr:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip deploy for fork PR
+        run: |
+          echo "Pull request de fork detectado."
+          echo "GitHub não expõe repository secrets para PRs de fork, então o deploy Vercel foi ignorado neste run."
+          echo "Faça merge/sync em branch do repositório principal ou execute deploy no push para main/master."
