@@ -26,6 +26,40 @@ jobs:
         with:
           node-version: 20
 
+      - name: Validate Vercel secrets
+        run: |
+          missing=0
+
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Secret VERCEL_TOKEN não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "::error::Secret VERCEL_ORG_ID não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Secret VERCEL_PROJECT_ID não encontrado no GitHub Actions."
+            missing=1
+          fi
+
+          # Evita erro comum: colar token (vcp_...) no lugar de ORG/PROJECT ID
+          if [ -n "$VERCEL_ORG_ID" ] && echo "$VERCEL_ORG_ID" | grep -q '^vcp_'; then
+            echo "::error::VERCEL_ORG_ID parece token (vcp_...). Use o orgId real (ex.: team_...) da Vercel."
+            missing=1
+          fi
+
+          if [ -n "$VERCEL_PROJECT_ID" ] && echo "$VERCEL_PROJECT_ID" | grep -q '^vcp_'; then
+            echo "::error::VERCEL_PROJECT_ID parece token (vcp_...). Use o projectId real (ex.: prj_...) da Vercel."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
