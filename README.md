@@ -33,3 +33,11 @@ Este repositório agora possui workflow em `.github/workflows/vercel-deploy.yml`
    - `VERCEL_PROJECT_ID`
 3. Faça push para `main` (ou `master`) para deploy de produção automático.
 4. Pull requests geram deploy de preview automático.
+
+### Re-executar workflow no GitHub Actions
+
+Se abrir o modal **Re-run all jobs** no GitHub Actions:
+
+- Clique em **Re-run jobs** normalmente.
+- Deixe **Enable debug logging** desmarcado na maioria dos casos.
+- Marque **Enable debug logging** apenas quando precisar investigar um erro de pipeline com logs mais detalhados.
